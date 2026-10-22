@@ -8,6 +8,7 @@
 <meta name="keywords" content="tic tac toe, 4d tic tac toe, tesseract game, online multiplayer board game">
 <meta name="author" content="Ahmad Eisa Siddique">
 <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: 'class' };</script>
 <style>
 :root {
   --bg: #f3f1ec; --fg: #1d2420; --g: #0f6b5c; --r: #a4362c; --b: #4a62b8;
@@ -76,6 +77,11 @@ body {
 .E[data-w="O"]::after, .G[data-w="O"]::after { color: var(--o); }
 .E[data-w="="]::after, .G[data-w="="]::after { color: var(--mut); }
 
+button:disabled, select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
+.c.last { outline: 2px solid var(--b); outline-offset: -2px; z-index: 1; }
+.board.focus { grid-template-columns: 1fr; min-width: 0; width: 100%; max-width: 640px; }
+.board.focus .c { font-size: clamp(14px, 3vw, 26px); }
+
 ::-webkit-scrollbar { height: 6px; width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--mut); border-radius: 4px; }
@@ -120,37 +126,71 @@ body {
       <span class="text-xs text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
     </summary>
     
-    <div class="p-4 border-t border-custom text-xs space-y-4 leading-relaxed">
+    <div class="p-4 border-t border-custom text-xs space-y-4 leading-relaxed text-gray-600 dark:text-gray-300">
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">1. Game Structure & Objective</h3>
-        <p class="text-gray-600 dark:text-gray-300">
-          Tic Tac Toe Tesseract is a 4D nested variant played across a <b>9×9×9 board containing 729 cells</b> in total:
-        </p>
-        <ul class="list-disc pl-5 mt-1 space-y-0.5 text-gray-600 dark:text-gray-300">
-          <li><b>9 Macro G-grids</b> (outermost green borders) labelled with Greek letters: <code>α, β, γ, δ, ε, ζ, η, θ, ι</code>.</li>
-          <li>Each Macro G-grid contains <b>9 Micro E-grids</b> (middle blue borders) labelled with English letters: <code>A, B, C, D, E, F, G, H, I</code>.</li>
-          <li>Each Micro E-grid contains <b>9 individual cells</b> numbered <code>1 to 9</code>.</li>
-          <li><b>Winning the Tesseract:</b> Win 3 cells in a line to claim a Micro E-grid. Claim 3 Micro E-grids in a line to claim a Macro G-grid. Claim 3 Macro G-grids in a line to win the entire Tesseract!</li>
+        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Goal of the game</h3>
+        <p>Get three connecting tiles in a line: vertically, diagonally or horizontally. Three cells in a line win a middle tile (E), three middle tiles in a line win an outer tile (G), and three outer tiles in a line win the whole Tesseract. The marks are always X and O.</p>
+      </div>
+
+      <div>
+        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">The board (729 squares)</h3>
+        <ul class="list-disc pl-5 space-y-0.5">
+          <li><b>Outer squares (green lines):</b> 9 tiles marked α (alpha) to ι (iota), written G<sub>n</sub>.</li>
+          <li><b>Middle squares (red lines):</b> 9 tiles inside each outer tile, marked A to I, written E<sub>n</sub>.</li>
+          <li><b>Inner squares (blue lines):</b> 9 cells inside each middle tile, numbered 1 to 9.</li>
+          <li>Every square corresponds to a number. Outer: α = 1 … ι = 9. Middle: A = 1 … I = 9. Inner: 1 to 9. So 3 = γ = C, 8 = θ = H, and so on.</li>
+          <li>9 × 9 × 9 = 729 squares in total.</li>
         </ul>
       </div>
 
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">2. Movement & Game Methods</h3>
-        <p class="text-gray-600 dark:text-gray-300 mb-1">Your cell selection restricts where your opponent is forced to play next based on the chosen method:</p>
+        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Writing coordinates</h3>
+        <p>A move is written as <code>G<sub>n</sub> E<sub>n</sub> (x/o) n</code>. The commas aren’t needed when you write the actual letters. Example: <code>βBx8</code> means outer β, middle B, an X on inner square 8.</p>
+      </div>
+
+      <div>
+        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Where you send your opponent</h3>
+        <p>Let <b>n</b> be the number of the inner square you just played. It decides where your opponent must play next. <b>m</b> is the move number (it only matters when you record a game). The first move of the game can go anywhere.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 my-2">
           <div class="p-2 bg-cell rounded border border-custom">
-            <b class="text-gray-800 dark:text-gray-200">Method 1 (sent to G):</b>
-            <p class="text-gray-500 dark:text-gray-400 mt-0.5">Cell position <code>i</code> inside an E-grid routes the opponent to Macro G-grid <code>i</code>.</p>
+            <b class="text-gray-800 dark:text-gray-200">Method 1: the longest way</b>
+            <p class="mt-0.5">n sends your opponent to G<sub>n</sub>, and they may play on any middle tile and any square inside it.</p>
+            <p class="mt-1">Example: Player 1 plays <code>βBx8</code>. Player 2 must play inside θ (the 8th Greek letter), on any middle tile.</p>
+            <p class="mt-1"><b>Insane version:</b> n sends them to G<sub>n</sub> <i>and</i> E<sub>n</sub>, so the move after <code>βBx8</code> must be on tile H of θ.</p>
           </div>
           <div class="p-2 bg-cell rounded border border-custom">
-            <b class="text-gray-800 dark:text-gray-200">Method 2 (blocks of 3):</b>
-            <p class="text-gray-500 dark:text-gray-400 mt-0.5">Turns alternate within the current G-grid for 3 consecutive moves, then cell <code>i</code> routes to Macro G-grid <code>i</code>.</p>
+            <b class="text-gray-800 dark:text-gray-200">Method 2: blocks of 3</b>
+            <p class="mt-0.5">For 3 moves, players play a standard game of Ultimate Tic Tac Toe inside one outer tile (n picks the middle tile). The n of every 3rd move picks the new outer tile for the next block, so the player who starts each block alternates.</p>
+            <p class="mt-1">Normal: <code>βBx3, βCo1, βAx4, δAo9</code> (any middle tile on δ).</p>
+            <p class="mt-1">Insane: <code>βBx3, βCo1, βAx4, δDo7</code> (must be middle tile D).</p>
+            <p class="mt-1">(The app uses blocks of 3. In theory any odd block length works, and a block of 1 is Method 1.)</p>
           </div>
           <div class="p-2 bg-cell rounded border border-custom">
-            <b class="text-gray-800 dark:text-gray-200">Method 3 (finish each G):</b>
-            <p class="text-gray-500 dark:text-gray-400 mt-0.5">Players stay within the current G-grid until it is won or drawn, after which a free move routes to the next target.</p>
+            <b class="text-gray-800 dark:text-gray-200">Method 3: the shortest way</b>
+            <p class="mt-0.5">Finish a whole Ultimate Tic Tac Toe game inside one outer tile (n picks the middle tile each move). When that outer tile is decided, the n of the final move picks the next outer tile.</p>
+            <p class="mt-1">Normal and insane both apply at the handoff.</p>
           </div>
         </div>
+        <p>Insane variant, in short: Move<sub>m+1</sub> = n → G<sub>n</sub> → E<sub>n</sub>. Normal: n → G<sub>n</sub> → anywhere in G<sub>n</sub>.</p>
+      </div>
+
+      <div>
+        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Decided tiles (the "free move" rule)</h3>
+        <ul class="list-disc pl-5 space-y-0.5">
+          <li>A tile is <b>decided</b> when it has been won or drawn (a full tile with no line counts as a draw and belongs to nobody).</li>
+          <li>If you are sent to a decided <b>E</b>, you may play on any other E in that same G. (The "Free move" setting can widen this to anywhere on the board.)</li>
+          <li>If you are sent to a decided <b>G</b>, you may play on any other G.</li>
+          <li>So sending your opponent to a finished tile hands them a free move. It’s usually a mistake.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Using this app</h3>
+        <ul class="list-disc pl-5 space-y-0.5">
+          <li>Yellow cells are where you may play. The last move has a blue outline.</li>
+          <li><b>Focus G</b> zooms into one outer tile (great on phones). It follows the tile you were sent to, and you can tap the α–ι buttons to look around.</li>
+          <li>Online: create a room, share the 6-letter code, and chat with your opponent. The host controls the rules and New Game. Undo is off online.</li>
+        </ul>
       </div>
     </div>
   </details>
@@ -222,6 +262,7 @@ body {
   <div class="flex items-center gap-2">
     <button id="new" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold">New Game</button>
     <button id="undo" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold">Undo</button>
+    <button id="focusBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold">🔍 Focus G</button>
   </div>
 </div>
 
@@ -230,6 +271,8 @@ body {
   <div id="st" class="text-sm font-medium"></div>
   <div id="aiStatus" class="hidden text-xs text-amber-600 dark:text-amber-400 font-semibold thinking">🤖 AI is calculating move...</div>
 </div>
+
+<div id="gPicker" class="hidden max-w-6xl w-full mx-auto px-4 mb-2 flex gap-1 flex-wrap"></div>
 
 <!-- Main Area: Board + Moves Sidebar -->
 <div class="max-w-6xl w-full mx-auto px-4 flex-1 flex flex-col lg:flex-row gap-4 items-start pb-6">
@@ -254,13 +297,22 @@ body {
       </div>
     </div>
 
-    <div id="moveListContainer" class="flex-1 overflow-y-auto my-3 pr-1 space-y-1.5 text-xs font-mono">
+    <div id="moveListContainer" class="flex-1 min-h-0 overflow-y-auto my-3 pr-1 space-y-1.5 text-xs font-mono">
       <div class="text-gray-400 italic text-center py-8 text-xs font-sans">No moves played yet. Start by clicking any tile!</div>
     </div>
 
+    <div id="chatBox" class="hidden border-t border-custom pt-2 mb-2">
+      <div class="text-xs font-bold mb-1">Chat</div>
+      <div id="chatLog" class="h-24 overflow-y-auto text-xs space-y-0.5 mb-2"></div>
+      <div class="flex gap-1">
+        <input id="chatInput" maxlength="200" placeholder="Message…" class="flex-1 min-w-0 px-2 py-1 rounded border border-custom bg-cell text-xs">
+        <button id="chatSend" class="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">Send</button>
+      </div>
+    </div>
+
     <div class="pt-3 border-t border-custom text-[11px] text-gray-500 dark:text-gray-400 flex justify-between">
-      <div>Player 1 (X): <span id="p1Stats" class="font-bold text-red-600 dark:text-red-400">0 tiles</span></div>
-      <div>Player 2 (O): <span id="p2Stats" class="font-bold text-teal-600 dark:text-teal-400">0 tiles</span></div>
+      <div>Player 1 (X): <span id="p1Stats" class="font-bold text-red-600 dark:text-red-400">E 0 · G 0</span></div>
+      <div>Player 2 (O): <span id="p2Stats" class="font-bold text-teal-600 dark:text-teal-400">E 0 · G 0</span></div>
     </div>
   </aside>
 
@@ -277,10 +329,22 @@ body {
   </div>
 </div>
 
+<!-- Leave / resign confirmation -->
+<div id="leaveModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+  <div class="bg-card p-6 rounded-xl max-w-sm w-full shadow-2xl border border-custom">
+    <h3 class="text-lg font-bold mb-2">Are you sure you want to leave?</h3>
+    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Doing this will cause you to resign and the opponent will win.</p>
+    <div class="flex justify-end gap-2">
+      <button id="leaveStay" class="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 text-xs font-semibold rounded-lg">Stay</button>
+      <button id="leaveGo" class="px-4 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700">Leave and resign</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase Modular SDK via CDN -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, get, update, push, query, limitToLast, onChildAdded, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 
 const firebaseConfig = {
@@ -310,6 +374,9 @@ let currentTab = 'AI';
 let currentRoomCode = null;
 let myRole = null; // 'X', 'O', or 'SPECTATOR'
 let unsubscribeRoom = null;
+let restoring = false;
+let lastSettings = { m: '1', ins: false, sc: 'g' };
+let oppJoined = false, unsubChat = null, focusMode = window.innerWidth < 700, focusG = 0, aiTimer = null;
 
 function init() {
   S = {
@@ -322,7 +389,8 @@ function init() {
     te: null,
     win: 0,
     log: [],
-    hist: []
+    hist: [],
+    last: -1
   };
 }
 
@@ -351,6 +419,7 @@ function dec(a) {
 function legalE(g, e) {
   if (S.win || S.gw[g] || S.ew[g * 9 + e]) return false;
   
+  if (currentTab === 'Online' && currentRoomCode && !oppJoined) return false;
   // If in online mode, restrict move if it's not the user's turn
   if (currentTab === 'Online' && myRole !== 'SPECTATOR') {
     if (S.turn !== myRole) return false;
@@ -365,15 +434,17 @@ function play(g, e, i) {
   const k = g * 81 + e * 9 + i;
   if (S.c[k] || !legalE(g, e)) return;
 
-  S.hist.push(snap());
+  // History is local-only: never stored or uploaded in online games
+  if (currentTab !== 'Online') S.hist.push(snap());
   S.c[k] = S.turn;
+  S.last = k;
   S.mc++;
 
   S.ew[g * 9 + e] = dec(S.c.slice(g * 81 + e * 9, g * 81 + e * 9 + 9));
   S.gw[g] = dec(S.ew.slice(g * 9, g * 9 + 9));
   S.win = dec(S.gw);
 
-  const moveText = GR[g] + EN[e] + (i + 1);
+  const moveText = GR[g] + EN[e] + S.turn.toLowerCase() + (i + 1);
   S.log.push(moveText);
 
   const M = +$('m').value, ins = $('ins').checked;
@@ -403,6 +474,7 @@ function play(g, e, i) {
   }
 
   S.turn = S.turn === 'X' ? 'O' : 'X';
+  if (S.tg != null) focusG = S.tg;
 
   if (currentTab === 'Online' && currentRoomCode) {
     syncToFirebase();
@@ -431,7 +503,7 @@ function build() {
         const b = document.createElement('button');
         b.className = 'c';
         b.title = GR[g] + EN[e] + (i + 1);
-        b.onclick = () => play(g, e, i);
+        b.onclick = () => { if (isAITurn()) return; play(g, e, i); };
         cells.push(b);
         E.appendChild(b);
       }
@@ -444,6 +516,7 @@ function build() {
 function render() {
   for (let g = 0; g < 9; g++) {
     const w = S.gw[g];
+    Gs[g].style.display = (!focusMode || g === focusG) ? '' : 'none';
     if (w) Gs[g].dataset.w = w === 'D' ? '=' : w;
     else delete Gs[g].dataset.w;
 
@@ -458,28 +531,66 @@ function render() {
       for (let i = 0; i < 9; i++) {
         const k = g * 81 + e * 9 + i, v = S.c[k], b = cells[k];
         b.textContent = v || '';
-        b.className = 'c' + (v ? ' ' + v.toLowerCase() : '');
+        b.className = 'c' + (v ? ' ' + v.toLowerCase() : '') + (k === S.last ? ' last' : '');
         b.disabled = !!v || !live;
       }
     }
   }
 
-  const cnt = p => S.c.filter(x => x === p).length;
+  const cnt = p => 'E ' + S.ew.filter(x => x === p).length + ' · G ' + S.gw.filter(x => x === p).length;
   let t;
 
   if (S.win) {
-    t = S.win === 'D' ? '<b>Draw.</b> Outer grid is full.' : `<b class="${S.win.toLowerCase()}">${S.win} wins the Tesseract!</b>`;
+    t = S.win === 'D' ? '<b>Draw.</b> Outer grid is full.' : `<b class="${S.win.toLowerCase()}">${S.win} wins${S.resigned ? ' (' + S.resigned + ' resigned)' : ' the Tesseract'}!</b>`;
   } else {
     const n = S.tg == null ? 'free move: play any open square' : 'sent to <b>' + GR[S.tg] + '</b>' + (S.te != null ? ' → <b>' + EN[S.te] + '</b>' : '');
     t = '<b class="' + S.turn.toLowerCase() + '">' + S.turn + '</b> to move, ' + n;
   }
 
+  if (currentTab === 'Online' && currentRoomCode) {
+    if (myRole === 'X' && !oppJoined) t = `⏳ Waiting for an opponent. Share room code <b>${currentRoomCode}</b>`;
+    else if (myRole === 'SPECTATOR') t = '👁 Spectating. ' + t;
+    else if (!S.win) t += S.turn === myRole ? ' <b>(your turn)</b>' : ' <i>(opponent’s turn)</i>';
+  }
   $('st').innerHTML = t;
-  $('p1Stats').textContent = cnt('X') + ' tiles';
-  $('p2Stats').textContent = cnt('O') + ' tiles';
+  $('p1Stats').textContent = cnt('X');
+  $('p2Stats').textContent = cnt('O');
 
   updateMoveLogUI();
+  lockControls();
+  renderPicker();
 }
+
+// Guests and spectators can't change rules or reset; Undo is off online
+function lockControls() {
+  const guest = currentTab === 'Online' && currentRoomCode && myRole !== 'X';
+  ['m', 'ins', 'sc', 'new'].forEach(id => $(id).disabled = !!guest);
+  $('undo').disabled = currentTab === 'Online';
+  $('chatBox').classList.toggle('hidden', !(currentTab === 'Online' && currentRoomCode));
+}
+
+function renderPicker() {
+  $('bd').classList.toggle('focus', focusMode);
+  const p = $('gPicker');
+  p.classList.toggle('hidden', !focusMode);
+  $('focusBtn').textContent = focusMode ? '🔍 Show all' : '🔍 Focus G';
+  if (!focusMode) return;
+  if (!p.children.length) {
+    for (let g = 0; g < 9; g++) {
+      const b = document.createElement('button');
+      b.onclick = () => { focusG = g; render(); };
+      p.appendChild(b);
+    }
+  }
+  for (let g = 0; g < 9; g++) {
+    const b = p.children[g], w = S.gw[g];
+    const live = [0, 1, 2, 3, 4, 5, 6, 7, 8].some(e => legalE(g, e));
+    b.textContent = GR[g] + (w ? (w === 'D' ? ' =' : ' ' + w) : '');
+    b.className = 'px-2 py-1 rounded border text-xs font-semibold ' +
+      (g === focusG ? 'bg-blue-600 text-white border-blue-600' : live ? 'bg-yellow-200 text-black border-yellow-500' : 'border-custom bg-card');
+  }
+}
+$('focusBtn').onclick = () => { focusMode = !focusMode; if (S.tg != null) focusG = S.tg; render(); };
 
 function updateMoveLogUI() {
   const container = $('moveListContainer');
@@ -522,18 +633,22 @@ function getValidMoves() {
   return moves;
 }
 
+function isAITurn() {
+  if (currentTab !== 'AI' || S.win) return false;
+  const side = $('aiPlayerSide').value;
+  return side === 'BOTH_AI' || side === S.turn;
+}
+
 function checkAndTriggerAI() {
   if (currentTab !== 'AI' || S.win) {
     $('aiStatus').classList.add('hidden');
     return;
   }
 
-  const aiSide = $('aiPlayerSide').value;
-  const isAITurn = (aiSide === 'BOTH_AI') || (aiSide === 'O' && S.turn === 'O') || (aiSide === 'X' && S.turn === 'X');
-
-  if (isAITurn) {
+  if (isAITurn()) {
     $('aiStatus').classList.remove('hidden');
-    setTimeout(makeAIMove, 350);
+    clearTimeout(aiTimer);
+    aiTimer = setTimeout(makeAIMove, 350);
   } else {
     $('aiStatus').classList.add('hidden');
   }
@@ -702,7 +817,6 @@ function evaluateCandidateMove(m, aiPlayer, diff) {
       score -= (diff === 'hard' ? 250 : 100);
     }
 
-    // IMPORTANT FIX:
     // Scores are measured from OUR AI's perspective.
     // The opponent will try to MINIMIZE our score, not maximize it.
     let worstOppResponseScore = Infinity;
@@ -760,6 +874,7 @@ function evaluateCandidateMove(m, aiPlayer, diff) {
 
 
 function makeAIMove() {
+  if (!isAITurn()) { $('aiStatus').classList.add('hidden'); return; }
   const valid = getValidMoves();
   if (valid.length === 0 || S.win) {
     $('aiStatus').classList.add('hidden');
@@ -776,7 +891,13 @@ function makeAIMove() {
     let bestScore = -Infinity;
     let candidates = [];
 
-    for (const m of valid) {
+    let pool = valid;
+    if (valid.length > 20) {
+      pool = valid
+        .map(m => ({ m, s: evaluateState(simulateMoveState(S, m), aiPlayer) + POS_WEIGHTS[m.i] * 5 + POS_WEIGHTS[m.e] * 8 }))
+        .sort((a, b) => b.s - a.s).slice(0, 20).map(o => o.m);
+    }
+    for (const m of pool) {
       let score = evaluateCandidateMove(m, aiPlayer, diff);
       
       if (diff === 'medium') {
@@ -830,9 +951,61 @@ function showModal(title, message) {
 }
 $('modalClose').onclick = () => $('customModal').classList.add('hidden');
 
+// ---- Seat persistence (survives refreshes) ----
+function saveSeat() {
+  try { localStorage.setItem('tesseractSeat', JSON.stringify({ code: currentRoomCode, role: myRole })); } catch (e) {}
+}
+function clearSeat() {
+  try { localStorage.removeItem('tesseractSeat'); } catch (e) {}
+}
+async function restoreSeat() {
+  try {
+    const s = JSON.parse(localStorage.getItem('tesseractSeat') || 'null');
+    if (!s || !s.code) return false;
+    const snapshot = await get(ref(db, 'rooms/' + s.code));
+    if (!snapshot.exists()) { clearSeat(); return false; }
+    currentRoomCode = s.code; myRole = s.role;
+    restoring = true; setMode('Online'); restoring = false;
+    $('roomCodeInput').value = s.code;
+    updateRoleBadge(); listenToRoom(s.code);
+    return true;
+  } catch (e) { return false; }
+}
+
+// ---- Leave room when switching away from Online ----
+function leaveRoom() {
+  if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+  if (unsubChat) { unsubChat(); unsubChat = null; }
+  currentRoomCode = null; myRole = null; oppJoined = false;
+  $('chatLog').innerHTML = '';
+  updateRoleBadge(); clearSeat();
+}
+
+function addChat(m) {
+  if (!m || typeof m.t !== 'string') return;
+  const d = document.createElement('div');
+  const who = document.createElement('b');
+  who.textContent = (m.r === 'SPECTATOR' ? '👁' : m.r) + ': ';
+  who.className = m.r === 'X' ? 'x' : m.r === 'O' ? 'o' : '';
+  d.appendChild(who);
+  d.appendChild(document.createTextNode(m.t));
+  const log = $('chatLog');
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+function sendChat() {
+  const inp = $('chatInput'), t = inp.value.trim().slice(0, 200);
+  if (!t || !currentRoomCode) return;
+  push(ref(db, 'rooms/' + currentRoomCode + '/chat'), { r: myRole, t, ts: Date.now() });
+  inp.value = '';
+}
+$('chatSend').onclick = sendChat;
+$('chatInput').onkeydown = e => { if (e.key === 'Enter') sendChat(); };
+
 async function createRoom() {
   const code = generateRoomCode();
   currentRoomCode = code;
+  oppJoined = false;
   myRole = 'X';
   updateRoleBadge();
   $('roomCodeInput').value = code;
@@ -851,6 +1024,7 @@ async function createRoom() {
   };
 
   await set(roomRef, initialState);
+  saveSeat();
   listenToRoom(code);
   showModal("Room Created", `Room Code: ${code}. Share this code with Player 2!`);
 }
@@ -873,23 +1047,25 @@ async function joinRoom() {
   const data = snapshot.val();
   currentRoomCode = code;
 
-  if (!data.playerO) {
+  const tx = await runTransaction(ref(db, 'rooms/' + code + '/playerO'), cur => cur ? undefined : true);
+  if (tx.committed) {
     myRole = 'O';
-    await update(roomRef, { playerO: true });
   } else {
     myRole = 'SPECTATOR';
     showModal("Notice", "Room full! You are spectating.");
   }
 
   updateRoleBadge();
+  saveSeat();
   listenToRoom(code);
 }
 
 function syncToFirebase() {
   if (!currentRoomCode) return;
   const roomRef = ref(db, 'rooms/' + currentRoomCode);
-  update(roomRef, {
-    gameState: JSON.stringify(S)
+  return update(roomRef, {
+    gameState: JSON.stringify({ ...S, hist: [] }),
+    settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value }
   });
 }
 
@@ -900,22 +1076,70 @@ function listenToRoom(code) {
   unsubscribeRoom = onValue(roomRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
+    oppJoined = !!data.playerO;
 
     if (data.gameState) {
       const parsed = JSON.parse(data.gameState);
       S = parsed;
+      S.hist = [];
+      if (S.tg != null) focusG = S.tg;
     }
     if (data.settings) {
+      lastSettings = { m: data.settings.m, ins: data.settings.ins, sc: data.settings.sc };
       $('m').value = data.settings.m;
       $('ins').checked = data.settings.ins;
       $('sc').value = data.settings.sc;
     }
     render();
   });
+
+  if (unsubChat) unsubChat();
+  $('chatLog').innerHTML = '';
+  unsubChat = onChildAdded(query(ref(db, 'rooms/' + code + '/chat'), limitToLast(60)), cs => addChat(cs.val()));
 }
 
-$('btnCreateRoom').onclick = createRoom;
-$('btnJoinRoom').onclick = joinRoom;
+// ---- Leave / resign handling ----
+function needsLeaveConfirm() {
+  return currentTab === 'Online' && !!currentRoomCode && (myRole === 'X' || myRole === 'O') && oppJoined && !S.win;
+}
+function askLeave() {
+  return new Promise(res => {
+    const m = $('leaveModal');
+    m.classList.remove('hidden');
+    const done = v => { m.classList.add('hidden'); res(v); };
+    $('leaveStay').onclick = () => done(false);
+    $('leaveGo').onclick = () => done(true);
+  });
+}
+async function resign() {
+  S.win = myRole === 'X' ? 'O' : 'X';
+  S.resigned = myRole;
+  try { await syncToFirebase(); } catch (e) {}
+}
+async function requestMode(mode) {
+  if (mode === currentTab) return;
+  if (needsLeaveConfirm()) {
+    if (!(await askLeave())) return;
+    await resign();
+  }
+  setMode(mode);
+}
+
+$('btnCreateRoom').onclick = async () => {
+  if (needsLeaveConfirm()) {
+    if (!(await askLeave())) return;
+    await resign();
+  }
+  createRoom();
+};
+$('btnJoinRoom').onclick = async () => {
+  const code = $('roomCodeInput').value.trim().toUpperCase();
+  if (needsLeaveConfirm() && code.length === 6 && code !== currentRoomCode) {
+    if (!(await askLeave())) return;
+    await resign();
+  }
+  joinRoom();
+};
 
 // Downloads & Reset
 function downloadMovesLog() {
@@ -937,6 +1161,8 @@ function downloadMovesLog() {
 }
 
 function setMode(mode) {
+  clearTimeout(aiTimer);
+  if (currentTab === 'Online' && mode !== 'Online') leaveRoom();
   currentTab = mode;
   ['tabLocal', 'tabAI', 'tabOnline'].forEach(id => {
     $(id).className = 'mode-tab py-2 px-4 border-b-2 font-medium border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300';
@@ -955,23 +1181,27 @@ function setMode(mode) {
     $('aiConfigPanel').classList.add('hidden');
     $('onlineConfigPanel').classList.remove('hidden');
   }
-  resetGame();
+  if (!restoring) resetGame();
 }
 
-$('tabLocal').onclick = () => setMode('Local');
-$('tabAI').onclick = () => setMode('AI');
-$('tabOnline').onclick = () => setMode('Online');
+$('tabLocal').onclick = () => requestMode('Local');
+$('tabAI').onclick = () => requestMode('AI');
+$('tabOnline').onclick = () => requestMode('Online');
 
 $('toggleRulesBtn').onclick = () => { $('rulesAccordion').open = !$('rulesAccordion').open; };
 $('downloadBtn').onclick = downloadMovesLog;
 $('toggleSidebarBtn').onclick = () => $('sidebarPanel').classList.toggle('hidden');
 $('collapseSidebarBtn').onclick = () => $('sidebarPanel').classList.toggle('hidden');
-$('themeToggle').onclick = () => {
-  const cur = document.documentElement.getAttribute('data-theme');
-  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
-};
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.documentElement.classList.toggle('dark', t === 'dark');
+  try { localStorage.setItem('tesseractTheme', t); } catch (e) {}
+}
+$('themeToggle').onclick = () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 
 function resetGame() {
+  clearTimeout(aiTimer);
+  lastSettings = { m: $('m').value, ins: $('ins').checked, sc: $('sc').value };
   init();
   if (currentTab === 'Online' && currentRoomCode && myRole === 'X') {
     syncToFirebase();
@@ -981,8 +1211,18 @@ function resetGame() {
   }
 }
 
-$('new').onclick = resetGame;
-['m', 'ins', 'sc', 'aiDifficulty', 'aiPlayerSide'].forEach(id => $(id).onchange = resetGame);
+$('new').onclick = () => {
+  if (currentTab === 'Online' && currentRoomCode && S.mc > 0 && !S.win && !confirm('Start a new game for both players?')) return;
+  resetGame();
+};
+['m', 'ins', 'sc', 'aiDifficulty', 'aiPlayerSide'].forEach(id => $(id).onchange = () => {
+  if (currentTab === 'Online' && currentRoomCode && S.mc > 0 && !S.win &&
+      !confirm('Changing this restarts the game for both players. Continue?')) {
+    $('m').value = lastSettings.m; $('ins').checked = lastSettings.ins; $('sc').value = lastSettings.sc;
+    return;
+  }
+  resetGame();
+});
 
 $('undo').onclick = () => {
   if (!S.hist.length || currentTab === 'Online') return;
@@ -995,10 +1235,13 @@ $('undo').onclick = () => {
 };
 
 window.onload = function() {
+  let th = null;
+  try { th = localStorage.getItem('tesseractTheme'); } catch (e) {}
+  applyTheme(th || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   build();
   init();
   render();
-  setMode('AI');
+  restoreSeat().then(ok => { if (!ok) setMode('AI'); });
 };
 </script>
 </body>
