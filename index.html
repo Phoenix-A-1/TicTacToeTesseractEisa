@@ -539,6 +539,226 @@ function checkAndTriggerAI() {
   }
 }
 
+// --- Enhanced Strategic AI Engine ---
+const POS_WEIGHTS = [3, 2, 3, 2, 5, 2, 3, 2, 3]; // Center=5, Corner=3, Edge=2
+
+function simulateMoveState(state, m) {
+  const k = m.g * 81 + m.e * 9 + m.i;
+  const c = state.c.slice();
+  const ew = state.ew.slice();
+  const gw = state.gw.slice();
+  const turn = state.turn;
+  const mc = state.mc + 1;
+
+  c[k] = turn;
+  const eIdx = m.g * 9 + m.e;
+  ew[eIdx] = dec(c.slice(m.g * 81 + m.e * 9, m.g * 81 + m.e * 9 + 9));
+  gw[m.g] = dec(ew.slice(m.g * 9, m.g * 9 + 9));
+  const win = dec(gw);
+
+  const M = +$('m').value, ins = $('ins').checked;
+  let tg, te;
+
+  if (M === 1) {
+    tg = m.i; te = ins ? m.i : null;
+  } else if (M === 2) {
+    if (mc % 3 === 0) { tg = m.i; te = ins ? m.i : null; }
+    else { tg = m.g; te = m.i; }
+  } else {
+    if (gw[m.g]) { tg = m.i; te = ins ? m.i : null; }
+    else { tg = m.g; te = m.i; }
+  }
+
+  if (gw[tg]) {
+    tg = null; te = null;
+  } else if (te != null && ew[tg * 9 + te]) {
+    te = null;
+    if ($('sc').value === 'b') tg = null;
+  }
+
+  const nextTurn = turn === 'X' ? 'O' : 'X';
+  return { c, ew, gw, turn: nextTurn, mc, tg, te, win };
+}
+
+function countLinesAndThreats(gridArray, player) {
+  let count = 0;
+  for (const L of LN) {
+    const vals = [gridArray[L[0]], gridArray[L[1]], gridArray[L[2]]];
+    const pCount = vals.filter(v => v === player).length;
+    const emptyCount = vals.filter(v => !v || v === 0).length;
+    if (pCount === 2 && emptyCount === 1) count += 1;
+    else if (pCount === 1 && emptyCount === 2) count += 0.25;
+  }
+  return count;
+}
+
+function getValidMovesForState(state) {
+  const moves = [];
+  const legalEState = (g, e) => {
+    if (state.win || state.gw[g] || state.ew[g * 9 + e]) return false;
+    return (state.tg == null || state.tg === g) && (state.te == null || state.te === e);
+  };
+
+  for (let g = 0; g < 9; g++) {
+    for (let e = 0; e < 9; e++) {
+      if (!legalEState(g, e)) continue;
+      for (let i = 0; i < 9; i++) {
+        const k = g * 81 + e * 9 + i;
+        if (!state.c[k]) moves.push({ g, e, i });
+      }
+    }
+  }
+  return moves;
+}
+
+function evaluateState(state, aiPlayer) {
+  const oppPlayer = aiPlayer === 'X' ? 'O' : 'X';
+  if (state.win === aiPlayer) return 100000;
+  if (state.win === oppPlayer) return -100000;
+  if (state.win === 'D') return 0;
+
+  let score = 0;
+
+  // Macro G-grid evaluation
+  for (let g = 0; g < 9; g++) {
+    const w = state.gw[g];
+    if (w === aiPlayer) score += 1000 * POS_WEIGHTS[g];
+    else if (w === oppPlayer) score -= 1000 * POS_WEIGHTS[g];
+  }
+  score += countLinesAndThreats(state.gw, aiPlayer) * 300;
+  score -= countLinesAndThreats(state.gw, oppPlayer) * 320;
+
+  // Micro E-grid evaluation
+  for (let g = 0; g < 9; g++) {
+    if (state.gw[g]) continue;
+    for (let e = 0; e < 9; e++) {
+      const eIdx = g * 9 + e;
+      const ew = state.ew[eIdx];
+      if (ew === aiPlayer) {
+        score += 80 * POS_WEIGHTS[e];
+      } else if (ew === oppPlayer) {
+        score -= 80 * POS_WEIGHTS[e];
+      } else if (!ew) {
+        const eGridSlice = state.c.slice(g * 81 + e * 9, g * 81 + e * 9 + 9);
+        score += countLinesAndThreats(eGridSlice, aiPlayer) * 15;
+        score -= countLinesAndThreats(eGridSlice, oppPlayer) * 16;
+      }
+    }
+  }
+
+  // Cell positional value
+  for (let k = 0; k < 729; k++) {
+    const val = state.c[k];
+    if (val) {
+      const e = ((k / 9) | 0) % 9;
+      const i = k % 9;
+      const posVal = POS_WEIGHTS[e] + POS_WEIGHTS[i];
+      if (val === aiPlayer) score += posVal;
+      else score -= posVal;
+    }
+  }
+
+  return score;
+}
+
+function evaluateCandidateMove(m, aiPlayer, diff) {
+  const sim = simulateMoveState(S, m);
+  const oppPlayer = aiPlayer === 'X' ? 'O' : 'X';
+
+  // Instant Tesseract game win
+  if (sim.win === aiPlayer) return 1000000;
+
+  // Evaluate the resulting position from the AI's perspective
+  let score = evaluateState(sim, aiPlayer);
+
+  // Position control bonus
+  score += POS_WEIGHTS[m.i] * 5
+         + POS_WEIGHTS[m.e] * 8
+         + POS_WEIGHTS[m.g] * 12;
+
+  // Immediate E-grid and G-grid win incentives
+  const prevEWin = S.ew[m.g * 9 + m.e];
+  const newEWin = sim.ew[m.g * 9 + m.e];
+
+  if (!prevEWin && newEWin === aiPlayer) score += 400;
+  if (!S.gw[m.g] && sim.gw[m.g] === aiPlayer) score += 2000;
+
+  // Check whether this move blocks an opponent's local E-grid win
+  const oppECopy = S.c.slice(
+    m.g * 81 + m.e * 9,
+    m.g * 81 + m.e * 9 + 9
+  );
+
+  oppECopy[m.i] = oppPlayer;
+
+  if (line(oppECopy) === oppPlayer) score += 350;
+
+  // Analyse the opponent's possible next moves
+  const oppMoves = getValidMovesForState(sim);
+
+  if (oppMoves.length > 0) {
+    if (sim.tg == null) {
+      // A completely free move gives the opponent more options
+      score -= (diff === 'hard' ? 250 : 100);
+    }
+
+    // IMPORTANT FIX:
+    // Scores are measured from OUR AI's perspective.
+    // The opponent will try to MINIMIZE our score, not maximize it.
+    let worstOppResponseScore = Infinity;
+
+    let oppCanWinE = false;
+    let oppCanWinG = false;
+
+    for (const om of oppMoves) {
+      const oppSim = simulateMoveState(sim, om);
+
+      // Giving the opponent an immediate Tesseract win is disastrous
+      if (oppSim.win === oppPlayer) {
+        return -900000;
+      }
+
+      // Check whether the opponent can win an E-grid
+      if (
+        !sim.ew[om.g * 9 + om.e] &&
+        oppSim.ew[om.g * 9 + om.e] === oppPlayer
+      ) {
+        oppCanWinE = true;
+      }
+
+      // Check whether the opponent can win a G-grid
+      if (
+        !sim.gw[om.g] &&
+        oppSim.gw[om.g] === oppPlayer
+      ) {
+        oppCanWinG = true;
+      }
+
+      // Evaluate the position after the opponent's response.
+      // A rational opponent chooses the response least favourable to us.
+      const respEval = evaluateState(oppSim, aiPlayer);
+
+      if (respEval < worstOppResponseScore) {
+        worstOppResponseScore = respEval;
+      }
+    }
+
+    // Penalize moves that allow immediate local or macro-grid wins
+    if (oppCanWinG) score -= 800;
+    if (oppCanWinE) score -= 250;
+
+    // Account for the opponent's strongest counterplay.
+    // Lower scores are worse for our AI, so use the minimum response score.
+    score += worstOppResponseScore * 0.4;
+  } else {
+    // Opponent has no legal moves
+    score += 150;
+  }
+
+  return score;
+}
+
+
 function makeAIMove() {
   const valid = getValidMoves();
   if (valid.length === 0 || S.win) {
@@ -552,24 +772,27 @@ function makeAIMove() {
   if (diff === 'easy') {
     chosen = valid[Math.floor(Math.random() * valid.length)];
   } else {
-    for (const m of valid) {
-      const copy = S.c.slice(m.g * 81 + m.e * 9, m.g * 81 + m.e * 9 + 9);
-      copy[m.i] = S.turn;
-      if (line(copy) === S.turn) { chosen = m; break; }
-    }
+    const aiPlayer = S.turn;
+    let bestScore = -Infinity;
+    let candidates = [];
 
-    if (!chosen && diff === 'hard') {
-      const opp = S.turn === 'X' ? 'O' : 'X';
-      for (const m of valid) {
-        const copy = S.c.slice(m.g * 81 + m.e * 9, m.g * 81 + m.e * 9 + 9);
-        copy[m.i] = opp;
-        if (line(copy) === opp) { chosen = m; break; }
+    for (const m of valid) {
+      let score = evaluateCandidateMove(m, aiPlayer, diff);
+      
+      if (diff === 'medium') {
+        // Add slight randomness for Medium difficulty variability
+        score += (Math.random() - 0.5) * 60;
+      }
+
+      if (score > bestScore + 0.001) {
+        bestScore = score;
+        candidates = [m];
+      } else if (Math.abs(score - bestScore) <= 0.001) {
+        candidates.push(m);
       }
     }
 
-    if (!chosen) {
-      chosen = valid[Math.floor(Math.random() * valid.length)];
-    }
+    chosen = candidates[Math.floor(Math.random() * candidates.length)];
   }
 
   if (chosen) play(chosen.g, chosen.e, chosen.i);
