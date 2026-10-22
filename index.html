@@ -7,133 +7,137 @@
 <meta name="description" content="Play Tic Tac Toe Tesseract, a complex 4D nested Tic-Tac-Toe game with 729 cells and online multiplayer capabilities.">
 <meta name="keywords" content="tic tac toe, 4d tic tac toe, tesseract game, online multiplayer board game">
 <meta name="author" content="Ahmad Eisa Siddique">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config = { darkMode: 'class' };</script>
 <style>
 :root {
-  --bg: #f3f1ec; --fg: #1d2420; --g: #0f6b5c; --r: #a4362c; --b: #4a62b8;
-  --cell: #fbfaf7; --hl: #ffe9a8; --x: #a4362c; --o: #0f6b5c; --mut: #5d655f;
-  --ov: rgba(243,241,236,.88); --card: #ffffff; --border: #d1d5db;
-  box-sizing: border-box; padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px);
+  --bg:#0b1118; --bg2:#14202c; --fg:#e7e3d8; --mut:#8c97a3; --card:#151f2a; --border:#2d3a48; --ink:#05080c;
+  --gold:#c8aa6e; --g:#8aa376; --r:#c48d94; --b:#8fb0cf;
+  --cell:#e8e5d8; --panel2:#1a2531; --hl:#f1e4a8; --x:#ff4655; --o:#4aa3ff; --ov:rgba(232,229,216,.93);
+  --cx:#e0192e; --co:#0b6fe8; --cmut:#8a8576;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
-
-*, *::before, *::after {
-  box-sizing: border-box;
+:root[data-theme="light"] {
+  --bg:#ecebe5; --bg2:#f7f6f1; --fg:#1d2630; --mut:#5f6b78; --card:#ffffff; --border:#cbc7bb; --ink:#b5b0a3;
+  --gold:#8f7230; --g:#8aa376; --r:#c48d94; --b:#8fb0cf;
+  --cell:#f3f1e6; --panel2:#f1efe6; --hl:#f1e4a8; --x:#d6303d; --o:#0b6fe8; --ov:rgba(243,241,230,.93);
+  --cx:#e0192e; --co:#0b6fe8; --cmut:#8a8576;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #111415; --fg: #e8e6df; --g: #257d6b; --r: #b84337; --b: #576ec7;
-    --cell: #1a2021; --hl: #4e4010; --x: #ff8a7c; --o: #59d1b5; --mut: #9aa39d;
-    --ov: rgba(17,20,21,.88); --card: #192022; --border: #374151;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #111415; --fg: #e8e6df; --g: #257d6b; --r: #b84337; --b: #576ec7;
-  --cell: #1a2021; --hl: #4e4010; --x: #ff8a7c; --o: #59d1b5; --mut: #9aa39d;
-  --ov: rgba(17,20,21,.88); --card: #192022; --border: #374151;
-}
-
+*, *::before, *::after { box-sizing:border-box; }
 body {
-  margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg);
-  font-family: Georgia, "Times New Roman", serif; transition: background 0.3s, color 0.3s;
+  margin:0; min-height:100vh; color:var(--fg); background-color:var(--bg);
+  background-image:radial-gradient(1100px 520px at 50% -160px, var(--bg2), var(--bg));
+  background-repeat:no-repeat;
+  font-family:"Barlow","Segoe UI",Roboto,Arial,sans-serif; transition:background-color .3s,color .3s;
 }
+.hidden { display:none !important; }
+.x { color:var(--x); } .o { color:var(--o); }
+.bg-cell { background-color:var(--panel2); }
+select option { background:var(--panel2); color:var(--fg); }
+.muted { color:var(--mut); }
+code { background:var(--panel2); border:1px solid var(--border); padding:1px 5px; border-radius:2px; }
+input[type=checkbox] { accent-color:#81b64c; }
+header { border-bottom:1px solid var(--border); padding-bottom:12px; }
+.card { background:var(--card); border:1px solid var(--border); border-top:2px solid var(--gold); border-radius:4px; box-shadow:0 8px 24px rgba(0,0,0,.28); }
 
-.x { color: var(--x); } .o { color: var(--o); }
-.bg-cell { background-color: var(--cell); }
-.bg-card { background-color: var(--card); }
-.border-custom { border-color: var(--border); }
+.title { font-family:"Barlow Condensed","Barlow",sans-serif; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); }
+.title::before { content:""; display:inline-block; width:11px; height:11px; margin-right:14px; background:var(--gold); transform:rotate(45deg) translateY(-3px); }
 
-.wrap { overflow-x: auto; width: 100%; padding: 4px; }
-.board {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-  background: var(--g); padding: 6px; min-width: 600px; max-width: 820px; margin: 0 auto;
-  border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
-  box-sizing: border-box;
-}
-.G { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; background: var(--r); padding: 3px; border-radius: 6px; box-sizing: border-box; }
-.E { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px; background: var(--b); padding: 1.5px; border-radius: 4px; box-sizing: border-box; }
-.c {
-  aspect-ratio: 1; border: 0; padding: 0; margin: 0; background: var(--cell); color: var(--fg);
-  font: 700 clamp(9px, 1.5vw, 15px)/1 Georgia, serif; cursor: pointer; transition: background 0.15s ease;
-  border-radius: 2px; box-sizing: border-box;
-  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
-  line-height: 1; user-select: none; vertical-align: top;
-}
-.c:hover:not(:disabled) { background: var(--hl); }
-.c:disabled { cursor: default; }
-.c.x { color: var(--x); } .c.o { color: var(--o); }
-.E.live .c:not(:disabled) { background: var(--hl); }
+/* Buttons, inputs, tabs */
+.btn { font:600 13px/1 "Barlow Condensed","Barlow",sans-serif; letter-spacing:.08em; text-transform:uppercase; padding:9px 14px; border:1px solid var(--border); border-bottom-width:3px; border-radius:3px; background:var(--card); color:var(--fg); cursor:pointer; transition:background .12s,border-color .12s,transform .08s; }
+.btn.sm { padding:5px 9px; font-size:12px; }
+.btn:hover:not(:disabled) { border-color:var(--gold); }
+.btn:active:not(:disabled) { transform:translateY(2px); border-bottom-width:1px; margin-bottom:2px; }
+.btn-g { background:#81b64c; border-color:#5d8a34; color:#10200a; }
+.btn-g:hover:not(:disabled) { background:#93c75d; border-color:#5d8a34; }
+.btn-y { background:transparent; border-color:var(--gold); color:var(--gold); }
+.btn-y:hover:not(:disabled) { background:rgba(200,170,110,.14); }
+.btn-b { background:#1e3a52; border-color:#2c5a82; color:#cfe6fa; }
+.btn-r { background:#3b1d22; border-color:#8a2f3a; color:#ff8f99; }
+:root[data-theme="light"] .btn-b { background:#dcebf8; border-color:#7fa9cf; color:#16405f; }
+:root[data-theme="light"] .btn-r { background:#fbe3e5; border-color:#d98a92; color:#8a1f2b; }
+.btn-p { background:var(--card); }
+.inp { font:500 13px "Barlow","Segoe UI",sans-serif; padding:5px 8px; border:1px solid var(--border); border-radius:3px; background:var(--panel2); color:var(--fg); }
+.inp:focus, .btn:focus-visible, .tab:focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
+.tab { font:600 15px "Barlow Condensed","Barlow",sans-serif; letter-spacing:.1em; text-transform:uppercase; padding:10px 18px; background:transparent; border:0; border-bottom:3px solid transparent; color:var(--mut); cursor:pointer; margin-bottom:-1px; transition:color .12s; }
+.tab:hover { color:var(--fg); }
+.tab.on { color:var(--gold); border-bottom-color:var(--gold); }
+.badge { display:inline-block; padding:2px 8px; border:1px solid var(--border); border-radius:3px; font-size:11px; font-weight:600; background:var(--panel2); }
 
-.E[data-w]::after, .G[data-w]::after {
-  content: attr(data-w); position: absolute; inset: 0; display: flex;
-  align-items: center; justify-content: center; background: var(--ov);
-  font-weight: 700; pointer-events: none; border-radius: inherit; z-index: 10;
-  margin: 0; line-height: 1;
-}
-.E[data-w]::after { font-size: clamp(20px, 4vw, 36px); }
-.G[data-w]::after { font-size: clamp(60px, 12vw, 110px); z-index: 20; }
-.E[data-w="X"]::after, .G[data-w="X"]::after { color: var(--x); }
-.E[data-w="O"]::after, .G[data-w="O"]::after { color: var(--o); }
-.E[data-w="="]::after, .G[data-w="="]::after { color: var(--mut); }
-
-button:disabled, select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
-.c.last { outline: 2px solid var(--b); outline-offset: -2px; z-index: 1; }
-.board.focus { grid-template-columns: 1fr; min-width: 0; width: 100%; max-width: 640px; }
-.board.focus .c { font-size: clamp(14px, 3vw, 26px); }
-
-::-webkit-scrollbar { height: 6px; width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--mut); border-radius: 4px; }
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.thinking { animation: pulse-subtle 1s infinite ease-in-out; }
+/* Board */
+.wrap { overflow-x:auto; width:100%; padding:8px; }
+.board { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; background:var(--g); padding:6px; min-width:600px; max-width:820px; margin:0 auto; border:2px solid var(--gold); border-radius:4px; box-shadow:0 16px 40px rgba(0,0,0,.4); }
+.G { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:3px; background:var(--r); padding:3px; border-radius:2px; }
+.E { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:1.5px; background:var(--b); padding:1.5px; border-radius:2px; }
+.c { aspect-ratio:1; border:0; padding:0; margin:0; background:var(--cell); color:#1d2630; font:700 19px/1 "Barlow","Segoe UI",sans-serif; -webkit-text-stroke:.7px currentColor; cursor:pointer; transition:background .12s; border-radius:1px; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; user-select:none; }
+.c:hover:not(:disabled) { background:#f7eebf; }
+.c:disabled { cursor:default; }
+.c.x { color:var(--cx); } .c.o { color:var(--co); }
+.E.live .c:not(:disabled) { background:var(--hl); }
+.c.last { outline:2px solid #a8842f; outline-offset:-2px; z-index:1; animation:fadein .25s ease-out; }
+@keyframes fadein { from{opacity:.2} to{opacity:1} }
+.E[data-w]::after, .G[data-w]::after { content:attr(data-w); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--ov); font-weight:700; pointer-events:none; border-radius:inherit; z-index:10; line-height:1; }
+.E[data-w]::after { font-size:clamp(20px,4vw,36px); }
+.G[data-w]::after { font-size:clamp(60px,12vw,110px); z-index:20; }
+.E[data-w="X"]::after, .G[data-w="X"]::after { color:var(--cx); }
+.E[data-w="O"]::after, .G[data-w="O"]::after { color:var(--co); }
+.E[data-w="="]::after, .G[data-w="="]::after { color:var(--cmut); }
+.board.focus { grid-template-columns:1fr; min-width:0; width:100%; max-width:640px; }
+.board.focus .c { font-size:min(8vw,46px); -webkit-text-stroke:1.2px currentColor; }
+button:disabled, select:disabled, input:disabled { opacity:.4; cursor:not-allowed; }
+::-webkit-scrollbar { height:8px; width:8px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+@keyframes pulse-subtle { 0%,100%{opacity:1} 50%{opacity:.45} }
+.thinking { animation:pulse-subtle 1.2s infinite ease-in-out; }
+details summary::-webkit-details-marker { display:none; }
+@media (prefers-reduced-motion: reduce) { .thinking,.c.last { animation:none; } }
+body.expanded #mainArea { flex-direction:column !important; align-items:center !important; max-width:100% !important; }
+body.expanded .wrap { flex:none; overflow:visible; padding:4px; }
+body.expanded .board { width:min(96vw, calc(100vh - 140px)); min-width:0; max-width:none; }
+body.expanded .c { font-size:calc(min(96vw, 100vh - 140px) * .034); }
+body.expanded .board.focus { width:min(96vw, calc(100vh - 200px)); }
+body.expanded .board.focus .c { font-size:calc(min(96vw, 100vh - 200px) * .10); }
+body.expanded #sidebarPanel { width:100% !important; max-width:720px; }
+.mini { display:grid; grid-template-columns:repeat(3,46px); gap:3px; padding:3px; border-radius:3px; width:max-content; }
+.mini.g { background:var(--g); } .mini.r { background:var(--r); } .mini.b { background:var(--b); }
+.mc { position:relative; width:46px; height:46px; display:flex; align-items:center; justify-content:center; background:var(--cell); color:#1d2630; font-weight:700; font-size:21px; border-radius:1px; }
+.mc i { position:absolute; top:2px; right:4px; font-size:9px; font-style:normal; font-weight:600; color:var(--cmut); }
+figure { margin:0; } figcaption { margin-top:6px; font-size:12px; color:var(--mut); }
 </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-<!-- Header -->
-<header class="max-w-6xl w-full mx-auto px-4 pt-4 flex flex-wrap items-center justify-between gap-2 border-b pb-3 border-custom">
+<header class="max-w-6xl w-full mx-auto px-4 pt-4 flex flex-wrap items-center justify-between gap-3 pb-2">
   <div>
-    <h1 class="text-2xl font-bold tracking-tight">Tic Tac Toe Tesseract</h1>
-    <p class="text-xs text-gray-500 dark:text-gray-400">4D Nested Tic-Tac-Toe (729 cells, 81 E-grids, 9 G-grids)</p>
-    <p class="text-xs font-semibold text-teal-600 dark:text-teal-400 mt-0.5">Made by Ahmad Eisa Siddique</p>
+    <h1 class="title text-3xl">Tic Tac Toe Tesseract</h1>
+    <p class="text-xs muted mt-1">4D nested tic-tac-toe: 729 cells, 81 E-grids, 9 G-grids</p>
+    <p class="text-xs font-semibold mt-0.5 o">Made by Ahmad Eisa Siddique</p>
   </div>
-  <div class="flex items-center gap-2">
-    <button id="toggleRulesBtn" class="text-xs px-3 py-1.5 rounded-lg border border-custom bg-card hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1 font-semibold">
-      📖 How to Play
-    </button>
-    <button id="toggleSidebarBtn" class="text-xs px-3 py-1.5 rounded-lg border border-custom bg-card hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-      📋 Toggle Moves Panel
-    </button>
-    <button id="themeToggle" class="text-xs px-3 py-1.5 rounded-lg border border-custom bg-card hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-      🌓 Theme
-    </button>
+  <div class="flex items-center gap-2 flex-wrap">
+    <button id="toggleRulesBtn" class="btn btn-y">How to Play</button>
+    <button id="toggleSidebarBtn" class="btn btn-b">Moves</button>
+    <button id="themeToggle" class="btn btn-p">Theme</button>
+    <button id="soundBtn" class="btn btn-p">Sound: On</button>
   </div>
 </header>
 
-<!-- Collapsible How to Play Guide -->
 <section class="max-w-6xl w-full mx-auto px-4 pt-3">
-  <details id="rulesAccordion" class="bg-card rounded-xl border border-custom shadow-sm overflow-hidden group">
-    <summary class="px-4 py-3 cursor-pointer flex items-center justify-between font-bold text-sm select-none hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-      <div class="flex items-center gap-2">
-        <span class="text-blue-600 dark:text-blue-400 text-base">📘</span>
-        <span>How to Play & Coordinate Notation Rules</span>
-      </div>
-      <span class="text-xs text-gray-400 group-open:rotate-180 transition-transform duration-200">▼</span>
+  <details id="rulesAccordion" class="card overflow-hidden group">
+    <summary class="px-4 py-3 cursor-pointer flex items-center justify-between font-bold text-sm select-none">
+      <span>How to Play &amp; Coordinate Notation</span>
+      <span class="text-xs muted group-open:rotate-180 transition-transform duration-200">▼</span>
     </summary>
-    
-    <div class="p-4 border-t border-custom text-xs space-y-4 leading-relaxed text-gray-600 dark:text-gray-300">
+    <div class="p-4 text-xs space-y-4 leading-relaxed" style="border-top:1px solid var(--border)">
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Goal of the game</h3>
+        <h3 class="font-bold text-sm o mb-1">Goal of the game</h3>
         <p>Get three connecting tiles in a line: vertically, diagonally or horizontally. Three cells in a line win a middle tile (E), three middle tiles in a line win an outer tile (G), and three outer tiles in a line win the whole Tesseract. The marks are always X and O.</p>
       </div>
-
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">The board (729 squares)</h3>
+        <h3 class="font-bold text-sm o mb-1">The board (729 squares)</h3>
         <ul class="list-disc pl-5 space-y-0.5">
           <li><b>Outer squares (green lines):</b> 9 tiles marked α (alpha) to ι (iota), written G<sub>n</sub>.</li>
           <li><b>Middle squares (red lines):</b> 9 tiles inside each outer tile, marked A to I, written E<sub>n</sub>.</li>
@@ -141,211 +145,192 @@ button:disabled, select:disabled, input:disabled { opacity: 0.5; cursor: not-all
           <li>Every square corresponds to a number. Outer: α = 1 … ι = 9. Middle: A = 1 … I = 9. Inner: 1 to 9. So 3 = γ = C, 8 = θ = H, and so on.</li>
           <li>9 × 9 × 9 = 729 squares in total.</li>
         </ul>
+        <div class="flex flex-wrap gap-6 my-3">
+          <figure><div class="mini g"><div class="mc">α<i>1</i></div><div class="mc">β<i>2</i></div><div class="mc">γ<i>3</i></div><div class="mc">δ<i>4</i></div><div class="mc">ε<i>5</i></div><div class="mc">ζ<i>6</i></div><div class="mc">η<i>7</i></div><div class="mc">θ<i>8</i></div><div class="mc">ι<i>9</i></div></div><figcaption>Outer squares (G), green lines</figcaption></figure>
+          <figure><div class="mini r"><div class="mc">A<i>1</i></div><div class="mc">B<i>2</i></div><div class="mc">C<i>3</i></div><div class="mc">D<i>4</i></div><div class="mc">E<i>5</i></div><div class="mc">F<i>6</i></div><div class="mc">G<i>7</i></div><div class="mc">H<i>8</i></div><div class="mc">I<i>9</i></div></div><figcaption>Middle squares (E), red lines</figcaption></figure>
+          <figure><div class="mini b"><div class="mc">1</div><div class="mc">2</div><div class="mc">3</div><div class="mc">4</div><div class="mc">5</div><div class="mc">6</div><div class="mc">7</div><div class="mc">8</div><div class="mc">9</div></div><figcaption>Inner squares, blue lines</figcaption></figure>
+        </div>
+        <p class="muted">The small corner number on the outer and middle squares is the number each one corresponds to.</p>
       </div>
-
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Writing coordinates</h3>
+        <h3 class="font-bold text-sm o mb-1">Writing coordinates</h3>
         <p>A move is written as <code>G<sub>n</sub> E<sub>n</sub> (x/o) n</code>. The commas aren’t needed when you write the actual letters. Example: <code>βBx8</code> means outer β, middle B, an X on inner square 8.</p>
       </div>
-
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Where you send your opponent</h3>
+        <h3 class="font-bold text-sm o mb-1">Where you send your opponent</h3>
         <p>Let <b>n</b> be the number of the inner square you just played. It decides where your opponent must play next. <b>m</b> is the move number (it only matters when you record a game). The first move of the game can go anywhere.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 my-2">
-          <div class="p-2 bg-cell rounded border border-custom">
-            <b class="text-gray-800 dark:text-gray-200">Method 1: the longest way</b>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-2">
+          <div class="p-2 bg-cell rounded" style="border:1px solid var(--border)">
+            <b>Method 1: the longest way</b>
             <p class="mt-0.5">n sends your opponent to G<sub>n</sub>, and they may play on any middle tile and any square inside it.</p>
             <p class="mt-1">Example: Player 1 plays <code>βBx8</code>. Player 2 must play inside θ (the 8th Greek letter), on any middle tile.</p>
             <p class="mt-1"><b>Insane version:</b> n sends them to G<sub>n</sub> <i>and</i> E<sub>n</sub>, so the move after <code>βBx8</code> must be on tile H of θ.</p>
           </div>
-          <div class="p-2 bg-cell rounded border border-custom">
-            <b class="text-gray-800 dark:text-gray-200">Method 2: blocks of 3</b>
+          <div class="p-2 bg-cell rounded" style="border:1px solid var(--border)">
+            <b>Method 2: blocks of 3</b>
             <p class="mt-0.5">For 3 moves, players play a standard game of Ultimate Tic Tac Toe inside one outer tile (n picks the middle tile). The n of every 3rd move picks the new outer tile for the next block, so the player who starts each block alternates.</p>
             <p class="mt-1">Normal: <code>βBx3, βCo1, βAx4, δAo9</code> (any middle tile on δ).</p>
             <p class="mt-1">Insane: <code>βBx3, βCo1, βAx4, δDo7</code> (must be middle tile D).</p>
-            <p class="mt-1">(The app uses blocks of 3. In theory any odd block length works, and a block of 1 is Method 1.)</p>
+            <p class="mt-1">(The app uses blocks of 3. In theory any odd block length works, because an even length would let the same player start every block. A block of 1 is Method 1.)</p>
           </div>
-          <div class="p-2 bg-cell rounded border border-custom">
-            <b class="text-gray-800 dark:text-gray-200">Method 3: the shortest way</b>
+          <div class="p-2 bg-cell rounded" style="border:1px solid var(--border)">
+            <b>Method 3: the shortest way</b>
             <p class="mt-0.5">Finish a whole Ultimate Tic Tac Toe game inside one outer tile (n picks the middle tile each move). When that outer tile is decided, the n of the final move picks the next outer tile.</p>
             <p class="mt-1">Normal and insane both apply at the handoff.</p>
           </div>
         </div>
         <p>Insane variant, in short: Move<sub>m+1</sub> = n → G<sub>n</sub> → E<sub>n</sub>. Normal: n → G<sub>n</sub> → anywhere in G<sub>n</sub>.</p>
       </div>
-
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Decided tiles (the "free move" rule)</h3>
+        <h3 class="font-bold text-sm o mb-1">Decided tiles (the "free move" rule)</h3>
         <ul class="list-disc pl-5 space-y-0.5">
           <li>A tile is <b>decided</b> when it has been won or drawn (a full tile with no line counts as a draw and belongs to nobody).</li>
           <li>If you are sent to a decided <b>E</b>, you may play on any other E in that same G. (The "Free move" setting can widen this to anywhere on the board.)</li>
-          <li>If you are sent to a decided <b>G</b>, you may play on any other G.</li>
+          <li>If you are sent to a decided <b>G</b>, you may always play on any other G.</li>
           <li>So sending your opponent to a finished tile hands them a free move. It’s usually a mistake.</li>
         </ul>
       </div>
-
       <div>
-        <h3 class="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1">Using this app</h3>
+        <h3 class="font-bold text-sm o mb-1">Using this app</h3>
         <ul class="list-disc pl-5 space-y-0.5">
-          <li>Yellow cells are where you may play. The last move has a blue outline.</li>
+          <li>Yellow cells are where you may play. The last move has a dark outline.</li>
           <li><b>Focus G</b> zooms into one outer tile (great on phones). It follows the tile you were sent to, and you can tap the α–ι buttons to look around.</li>
-          <li>Online: create a room, share the 6-letter code, and chat with your opponent. The host controls the rules and New Game. Undo is off online.</li>
+          <li><b>Resign</b> (vs AI or online) concedes the game after a confirmation. Against the AI you can Undo a resign.</li>
+          <li>Online: create a room, share the 6-letter code, and chat with your opponent. The host controls the rules. If the opponent disconnects you can claim the win. Undo is off online.</li>
         </ul>
       </div>
     </div>
   </details>
 </section>
 
-<!-- Main Navigation Tabs -->
-<div class="max-w-6xl w-full mx-auto px-4 pt-3">
-  <div class="flex border-b border-custom gap-2 text-sm">
-    <button id="tabLocal" class="mode-tab py-2 px-4 border-b-2 font-medium border-transparent text-gray-500 hover:text-gray-700">Pass & Play</button>
-    <button id="tabAI" class="mode-tab py-2 px-4 border-b-2 font-medium border-blue-600 text-blue-600 dark:text-blue-400">vs AI</button>
-    <button id="tabOnline" class="mode-tab py-2 px-4 border-b-2 font-medium border-transparent text-gray-500 hover:text-gray-700">Online Multiplayer</button>
+<div class="max-w-6xl w-full mx-auto px-4 pt-4">
+  <div class="flex gap-1 flex-wrap" style="border-bottom:1px solid var(--border)">
+    <button id="tabLocal" class="tab">Pass &amp; Play</button>
+    <button id="tabAI" class="tab on">vs AI</button>
+    <button id="tabOnline" class="tab">Online</button>
   </div>
 </div>
 
-<!-- Controls Bar -->
-<div class="max-w-6xl w-full mx-auto px-4 py-3 flex flex-wrap gap-3 items-center justify-between bg-card my-2 rounded-xl shadow-sm border border-custom text-sm">
-  
+<div class="max-w-6xl w-full mx-auto px-4 py-3 flex flex-wrap gap-3 items-center justify-between card my-3 text-sm" style="width:calc(100% - 2rem)">
   <div class="flex flex-wrap items-center gap-2">
-    <label class="flex items-center gap-1">
-      <span class="text-xs font-semibold text-gray-500">Method:</span>
-      <select id="m" class="px-2 py-1 rounded border border-custom bg-cell text-xs">
+    <label class="flex items-center gap-1"><span class="text-xs font-semibold muted">Method:</span>
+      <select id="m" class="inp">
         <option value="1">1 · sent to G</option>
         <option value="2">2 · blocks of 3</option>
         <option value="3">3 · finish each G</option>
       </select>
     </label>
-
     <label class="flex items-center gap-1 text-xs cursor-pointer select-none">
-      <input type="checkbox" id="ins" class="rounded border-gray-300">
-      <span>Insane (G→E)</span>
+      <input type="checkbox" id="ins"><span>Insane (G→E)</span>
     </label>
-
-    <label class="flex items-center gap-1">
-      <span class="text-xs font-semibold text-gray-500">Free move:</span>
-      <select id="sc" class="px-2 py-1 rounded border border-custom bg-cell text-xs">
-        <option value="g">stays in same G</option>
+    <label class="flex items-center gap-1"><span class="text-xs font-semibold muted">If the forced E is decided:</span>
+      <select id="sc" class="inp">
+        <option value="g">any E in same G</option>
         <option value="b">anywhere on board</option>
       </select>
     </label>
   </div>
 
-  <!-- Dynamic AI Controls Panel -->
   <div id="aiConfigPanel" class="flex items-center gap-2 flex-wrap">
-    <label class="text-xs font-semibold text-gray-500">Difficulty:
-      <select id="aiDifficulty" class="px-2 py-1 rounded border border-custom bg-cell text-xs">
+    <label class="text-xs font-semibold muted">Difficulty:
+      <select id="aiDifficulty" class="inp">
         <option value="easy">Easy</option>
         <option value="medium">Medium</option>
         <option value="hard" selected>Hard</option>
       </select>
     </label>
-    <label class="text-xs font-semibold text-gray-500">Side:
-      <select id="aiPlayerSide" class="px-2 py-1 rounded border border-custom bg-cell text-xs">
-        <option value="O">Player 1 (X) vs AI (O)</option>
-        <option value="X">AI (X) vs Player 2 (O)</option>
+    <label class="text-xs font-semibold muted">Side:
+      <select id="aiPlayerSide" class="inp">
+        <option value="O">You (X) vs AI (O)</option>
+        <option value="X">AI (X) vs You (O)</option>
         <option value="BOTH_AI">AI vs AI</option>
       </select>
     </label>
   </div>
 
-  <!-- Online Controls Panel -->
   <div id="onlineConfigPanel" class="hidden flex items-center gap-2 flex-wrap">
-    <input id="roomCodeInput" type="text" placeholder="Room Code" maxlength="6" class="uppercase px-2 py-1 rounded border border-custom bg-cell text-xs w-24 tracking-wider font-mono">
-    <button id="btnJoinRoom" class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">Join</button>
-    <button id="btnCreateRoom" class="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700">Create Room</button>
-    <span id="onlineRoleBadge" class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 dark:bg-gray-700"></span>
+    <input id="roomCodeInput" type="text" placeholder="Room Code" maxlength="6" class="inp uppercase w-24 tracking-wider">
+    <button id="btnJoinRoom" class="btn btn-b">Join</button>
+    <button id="btnCreateRoom" class="btn btn-g">Create Room</button>
+    <span id="onlineRoleBadge" class="hidden badge"></span>
   </div>
 
-  <!-- Right Actions -->
-  <div class="flex items-center gap-2">
-    <button id="new" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold">New Game</button>
-    <button id="undo" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold">Undo</button>
-    <button id="focusBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold">🔍 Focus G</button>
+  <div class="flex items-center gap-2 flex-wrap">
+    <button id="new" class="btn btn-y">New Game</button>
+    <button id="undo" class="btn">Undo</button>
+    <button id="resignBtn" class="btn btn-r hidden">Resign</button>
+    <button id="expandBtn" class="btn btn-p">Expand</button>
+    <button id="focusBtn" class="btn btn-p">Focus G</button>
   </div>
 </div>
 
-<!-- Status Bar -->
-<div class="max-w-6xl w-full mx-auto px-4 mb-2 flex items-center justify-between">
-  <div id="st" class="text-sm font-medium"></div>
-  <div id="aiStatus" class="hidden text-xs text-amber-600 dark:text-amber-400 font-semibold thinking">🤖 AI is calculating move...</div>
+<div class="max-w-6xl w-full mx-auto px-4 mb-2 flex items-center justify-between gap-2 flex-wrap">
+  <div class="flex items-center gap-2 flex-wrap">
+    <div id="st" class="text-sm font-semibold"></div>
+    <button id="claimBtn" class="btn btn-g sm hidden">Opponent left: claim win</button>
+  </div>
+  <div id="aiStatus" class="hidden text-xs font-semibold thinking o">The AI is thinking...</div>
 </div>
 
-<div id="gPicker" class="hidden max-w-6xl w-full mx-auto px-4 mb-2 flex gap-1 flex-wrap"></div>
+<div id="gPicker" class="hidden max-w-6xl w-full mx-auto px-4 mb-2 flex gap-1.5 flex-wrap"></div>
 
-<!-- Main Area: Board + Moves Sidebar -->
-<div class="max-w-6xl w-full mx-auto px-4 flex-1 flex flex-col lg:flex-row gap-4 items-start pb-6">
-  
+<div id="mainArea" class="max-w-6xl w-full mx-auto px-4 flex-1 flex flex-col lg:flex-row gap-4 items-start pb-8">
   <div class="wrap flex-1 flex items-center justify-center min-w-0">
     <div class="board" id="bd"></div>
   </div>
 
-  <aside id="sidebarPanel" class="w-full lg:w-80 bg-card rounded-xl border border-custom shadow-sm p-4 flex flex-col h-[580px] transition-all">
-    <div class="flex items-center justify-between pb-3 border-b border-custom">
+  <aside id="sidebarPanel" class="w-full lg:w-80 card p-4 flex flex-col h-[580px]">
+    <div class="flex items-center justify-between pb-3" style="border-bottom:1px solid var(--border)">
       <div class="flex items-center gap-2">
         <h2 class="font-bold text-sm">Move History</h2>
-        <span id="moveCounterBadge" class="px-2 py-0.5 text-[10px] bg-gray-200 dark:bg-gray-700 rounded-full font-mono">0 Moves</span>
+        <span id="moveCounterBadge" class="badge">0 Moves</span>
       </div>
       <div class="flex items-center gap-1">
-        <button id="downloadBtn" class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition flex items-center gap-1" title="Download Moves (.txt)">
-          💾 Export .txt
-        </button>
-        <button id="collapseSidebarBtn" class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold rounded" title="Collapse Panel">
-          ✕
-        </button>
+        <button id="downloadBtn" class="btn btn-b sm" title="Download Moves (.txt)">Export</button>
+        <button id="collapseSidebarBtn" class="btn sm" title="Collapse Panel">✕</button>
       </div>
     </div>
 
-    <div id="moveListContainer" class="flex-1 min-h-0 overflow-y-auto my-3 pr-1 space-y-1.5 text-xs font-mono">
-      <div class="text-gray-400 italic text-center py-8 text-xs font-sans">No moves played yet. Start by clicking any tile!</div>
-    </div>
+    <div id="moveListContainer" class="flex-1 min-h-0 overflow-y-auto my-3 pr-1 space-y-1.5 text-xs"></div>
 
-    <div id="chatBox" class="hidden border-t border-custom pt-2 mb-2">
+    <div id="chatBox" class="hidden pt-2 mb-2" style="border-top:1px solid var(--border)">
       <div class="text-xs font-bold mb-1">Chat</div>
       <div id="chatLog" class="h-24 overflow-y-auto text-xs space-y-0.5 mb-2"></div>
       <div class="flex gap-1">
-        <input id="chatInput" maxlength="200" placeholder="Message…" class="flex-1 min-w-0 px-2 py-1 rounded border border-custom bg-cell text-xs">
-        <button id="chatSend" class="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">Send</button>
+        <input id="chatInput" maxlength="200" placeholder="Message…" class="inp flex-1 min-w-0">
+        <button id="chatSend" class="btn btn-b sm">Send</button>
       </div>
     </div>
 
-    <div class="pt-3 border-t border-custom text-[11px] text-gray-500 dark:text-gray-400 flex justify-between">
-      <div>Player 1 (X): <span id="p1Stats" class="font-bold text-red-600 dark:text-red-400">E 0 · G 0</span></div>
-      <div>Player 2 (O): <span id="p2Stats" class="font-bold text-teal-600 dark:text-teal-400">E 0 · G 0</span></div>
+    <div class="pt-3 text-[11px] flex justify-between" style="border-top:1px solid var(--border)">
+      <div>Player 1 (X): <span id="p1Stats" class="font-bold x">E 0 · G 0</span></div>
+      <div>Player 2 (O): <span id="p2Stats" class="font-bold o">E 0 · G 0</span></div>
     </div>
   </aside>
-
 </div>
 
-<!-- Modal Dialog -->
-<div id="customModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-  <div class="bg-card p-6 rounded-xl max-w-sm w-full shadow-2xl border border-custom">
+<div id="customModal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background:rgba(3,6,10,.7)">
+  <div class="card p-6 max-w-sm w-full">
     <h3 id="modalTitle" class="text-lg font-bold mb-2">Notice</h3>
-    <p id="modalBody" class="text-sm text-gray-600 dark:text-gray-300 mb-4"></p>
+    <p id="modalBody" class="text-sm mb-4"></p>
+    <div class="flex justify-end"><button id="modalClose" class="btn btn-g">OK</button></div>
+  </div>
+</div>
+
+<div id="leaveModal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background:rgba(3,6,10,.7)">
+  <div class="card p-6 max-w-sm w-full">
+    <h3 id="leaveTitle" class="text-lg font-bold mb-2"></h3>
+    <p id="leaveBody" class="text-sm mb-4"></p>
     <div class="flex justify-end gap-2">
-      <button id="modalClose" class="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700">OK</button>
+      <button id="leaveStay" class="btn">Stay</button>
+      <button id="leaveGo" class="btn btn-r"></button>
     </div>
   </div>
 </div>
 
-<!-- Leave / resign confirmation -->
-<div id="leaveModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-  <div class="bg-card p-6 rounded-xl max-w-sm w-full shadow-2xl border border-custom">
-    <h3 class="text-lg font-bold mb-2">Are you sure you want to leave?</h3>
-    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Doing this will cause you to resign and the opponent will win.</p>
-    <div class="flex justify-end gap-2">
-      <button id="leaveStay" class="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 text-xs font-semibold rounded-lg">Stay</button>
-      <button id="leaveGo" class="px-4 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700">Leave and resign</button>
-    </div>
-  </div>
-</div>
-
-<!-- Firebase Modular SDK via CDN -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, get, update, push, query, limitToLast, onChildAdded, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
+import { getDatabase, ref, set, onValue, get, update, push, query, limitToLast, onChildAdded, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxecWULepymiyDDNq4kmgG8HR9_1crzKk",
@@ -358,154 +343,83 @@ const firebaseConfig = {
   measurementId: "G-WMFWMK8NRH"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-// Helper function
 const $ = id => document.getElementById(id);
 
 const GR = 'αβγδεζηθι', EN = 'ABCDEFGHI', LN = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
 let S, cells = [], Es = [], Gs = [];
-let currentTab = 'AI'; 
-
-// Multiplayer state variables
-let currentRoomCode = null;
-let myRole = null; // 'X', 'O', or 'SPECTATOR'
-let unsubscribeRoom = null;
-let restoring = false;
+let currentTab = 'AI';
+let currentRoomCode = null, myRole = null, unsubscribeRoom = null, restoring = false;
 let lastSettings = { m: '1', ins: false, sc: 'g' };
-let oppJoined = false, unsubChat = null, focusMode = window.innerWidth < 700, focusG = 0, aiTimer = null;
+let oppJoined = false, oppGone = false, focusMode = window.innerWidth < 700, focusG = 0, aiTimer = null;
 
 function init() {
-  S = {
-    c: Array(729).fill(0),
-    ew: Array(81).fill(0),
-    gw: Array(9).fill(0),
-    turn: 'X',
-    mc: 0,
-    tg: null,
-    te: null,
-    win: 0,
-    log: [],
-    hist: [],
-    last: -1
-  };
+  S = { c: Array(729).fill(0), ew: Array(81).fill(0), gw: Array(9).fill(0), turn: 'X', mc: 0, tg: null, te: null, win: 0, log: [], hist: [], last: -1 };
 }
-
-function snap() {
-  const h = S.hist;
-  S.hist = [];
-  const s = JSON.stringify(S);
-  S.hist = h;
-  return s;
-}
-
+function snap() { const h = S.hist; S.hist = []; const s = JSON.stringify(S); S.hist = h; return s; }
 function line(a) {
-  for (const L of LN) {
-    const v = a[L[0]];
-    if (v && v !== 'D' && v === a[L[1]] && v === a[L[2]]) return v;
-  }
+  for (const L of LN) { const v = a[L[0]]; if (v && v !== 'D' && v === a[L[1]] && v === a[L[2]]) return v; }
   return 0;
 }
+function dec(a) { let w = line(a); if (!w && a.every(x => x)) w = 'D'; return w; }
 
-function dec(a) {
-  let w = line(a);
-  if (!w && a.every(x => x)) w = 'D';
-  return w;
-}
-
-function legalE(g, e) {
+// Pure rule check (no online/turn restrictions)
+function legalBase(g, e) {
   if (S.win || S.gw[g] || S.ew[g * 9 + e]) return false;
-  
-  if (currentTab === 'Online' && currentRoomCode && !oppJoined) return false;
-  // If in online mode, restrict move if it's not the user's turn
-  if (currentTab === 'Online' && myRole !== 'SPECTATOR') {
-    if (S.turn !== myRole) return false;
-  } else if (currentTab === 'Online' && myRole === 'SPECTATOR') {
-    return false;
-  }
-
   return (S.tg == null || S.tg === g) && (S.te == null || S.te === e);
+}
+function legalE(g, e) {
+  if (!legalBase(g, e)) return false;
+  if (currentTab === 'Online') {
+    if (currentRoomCode && !oppJoined) return false;
+    if (myRole !== 'X' && myRole !== 'O') return false;
+    if (S.turn !== myRole) return false;
+  }
+  return true;
 }
 
 function play(g, e, i) {
   const k = g * 81 + e * 9 + i;
   if (S.c[k] || !legalE(g, e)) return;
-
-  // History is local-only: never stored or uploaded in online games
   if (currentTab !== 'Online') S.hist.push(snap());
-  S.c[k] = S.turn;
-  S.last = k;
-  S.mc++;
-
+  S.c[k] = S.turn; S.last = k; S.mc++;
   S.ew[g * 9 + e] = dec(S.c.slice(g * 81 + e * 9, g * 81 + e * 9 + 9));
   S.gw[g] = dec(S.ew.slice(g * 9, g * 9 + 9));
   S.win = dec(S.gw);
-
-  const moveText = GR[g] + EN[e] + S.turn.toLowerCase() + (i + 1);
-  S.log.push(moveText);
+  S.log.push(GR[g] + EN[e] + S.turn.toLowerCase() + (i + 1));
 
   const M = +$('m').value, ins = $('ins').checked;
   let tg, te;
+  if (M === 1) { tg = i; te = ins ? i : null; }
+  else if (M === 2) { if (S.mc % 3 === 0) { tg = i; te = ins ? i : null; } else { tg = g; te = i; } }
+  else { if (S.gw[g]) { tg = i; te = ins ? i : null; } else { tg = g; te = i; } }
 
-  if (M === 1) {
-    tg = i; te = ins ? i : null;
-  } else if (M === 2) {
-    if (S.mc % 3 === 0) { tg = i; te = ins ? i : null; }
-    else { tg = g; te = i; }
-  } else {
-    if (S.gw[g]) { tg = i; te = ins ? i : null; }
-    else { tg = g; te = i; }
-  }
-
-  if (S.gw[tg]) {
-    tg = null; te = null;
-  } else if (te != null && S.ew[tg * 9 + te]) {
-    te = null;
-    if ($('sc').value === 'b') tg = null;
-  }
-
+  if (S.gw[tg]) { tg = null; te = null; }
+  else if (te != null && S.ew[tg * 9 + te]) { te = null; if ($('sc').value === 'b') tg = null; }
   S.tg = tg; S.te = te;
 
-  if (!S.win && ![...Array(81).keys()].some(n => legalE((n / 9) | 0, n % 9))) {
-    S.tg = null; S.te = null;
-  }
+  if (!S.win && ![...Array(81).keys()].some(n => legalBase((n / 9) | 0, n % 9))) { S.tg = null; S.te = null; }
 
   S.turn = S.turn === 'X' ? 'O' : 'X';
   if (S.tg != null) focusG = S.tg;
 
-  if (currentTab === 'Online' && currentRoomCode) {
-    syncToFirebase();
-  } else {
-    render();
-    checkAndTriggerAI();
-  }
+  if (currentTab === 'Online' && currentRoomCode) syncToFirebase();
+  else { render(); checkAndTriggerAI(); }
 }
 
 function build() {
-  const bd = $('bd');
-  bd.innerHTML = '';
-  cells = []; Es = []; Gs = [];
-
+  const bd = $('bd'); bd.innerHTML = ''; cells = []; Es = []; Gs = [];
   for (let g = 0; g < 9; g++) {
-    const G = document.createElement('div');
-    G.className = 'G';
-    Gs.push(G);
-
+    const G = document.createElement('div'); G.className = 'G'; Gs.push(G);
     for (let e = 0; e < 9; e++) {
-      const E = document.createElement('div');
-      E.className = 'E';
-      Es.push(E);
-
+      const E = document.createElement('div'); E.className = 'E'; Es.push(E);
       for (let i = 0; i < 9; i++) {
         const b = document.createElement('button');
-        b.className = 'c';
-        b.title = GR[g] + EN[e] + (i + 1);
+        b.className = 'c'; b.title = GR[g] + EN[e] + (i + 1);
         b.onclick = () => { if (isAITurn()) return; play(g, e, i); };
-        cells.push(b);
-        E.appendChild(b);
+        cells.push(b); E.appendChild(b);
       }
       G.appendChild(E);
     }
@@ -513,21 +427,25 @@ function build() {
   }
 }
 
+const cl = v => v === 'X' ? 'x' : v === 'O' ? 'o' : '';
+function setStatus(parts) {
+  const st = $('st'); st.replaceChildren();
+  parts.forEach(p => {
+    if (typeof p === 'string') st.append(p);
+    else { const el = document.createElement(p.i ? 'i' : 'b'); if (p.c) el.className = p.c; el.textContent = p.t; st.append(el); }
+  });
+}
+
 function render() {
   for (let g = 0; g < 9; g++) {
     const w = S.gw[g];
     Gs[g].style.display = (!focusMode || g === focusG) ? '' : 'none';
-    if (w) Gs[g].dataset.w = w === 'D' ? '=' : w;
-    else delete Gs[g].dataset.w;
-
+    if (w) Gs[g].dataset.w = w === 'D' ? '=' : w; else delete Gs[g].dataset.w;
     for (let e = 0; e < 9; e++) {
       const E = Es[g * 9 + e], ew = S.ew[g * 9 + e];
-      if (ew) E.dataset.w = ew === 'D' ? '=' : ew;
-      else delete E.dataset.w;
-
+      if (ew) E.dataset.w = ew === 'D' ? '=' : ew; else delete E.dataset.w;
       const live = legalE(g, e);
       E.classList.toggle('live', live);
-
       for (let i = 0; i < 9; i++) {
         const k = g * 81 + e * 9 + i, v = S.c[k], b = cells[k];
         b.textContent = v || '';
@@ -536,44 +454,48 @@ function render() {
       }
     }
   }
-
   const cnt = p => 'E ' + S.ew.filter(x => x === p).length + ' · G ' + S.gw.filter(x => x === p).length;
-  let t;
-
+  let parts;
   if (S.win) {
-    t = S.win === 'D' ? '<b>Draw.</b> Outer grid is full.' : `<b class="${S.win.toLowerCase()}">${S.win} wins${S.resigned ? ' (' + S.resigned + ' resigned)' : ' the Tesseract'}!</b>`;
+    if (S.win === 'D') parts = [{ t: 'Draw!' }, ' The outer grid is full.'];
+    else parts = [{ t: S.win + ' wins' + (S.resigned ? ' (' + S.resigned + ' resigned)' : ' the Tesseract') + '!', c: cl(S.win) }];
   } else {
-    const n = S.tg == null ? 'free move: play any open square' : 'sent to <b>' + GR[S.tg] + '</b>' + (S.te != null ? ' → <b>' + EN[S.te] + '</b>' : '');
-    t = '<b class="' + S.turn.toLowerCase() + '">' + S.turn + '</b> to move, ' + n;
+    parts = [{ t: S.turn, c: cl(S.turn) }, ' to move, '];
+    if (S.tg == null) parts.push('free move: play any open square');
+    else { parts.push('sent to ', { t: GR[S.tg] }); if (S.te != null) parts.push(' → ', { t: EN[S.te] }); }
   }
-
   if (currentTab === 'Online' && currentRoomCode) {
-    if (myRole === 'X' && !oppJoined) t = `⏳ Waiting for an opponent. Share room code <b>${currentRoomCode}</b>`;
-    else if (myRole === 'SPECTATOR') t = '👁 Spectating. ' + t;
-    else if (!S.win) t += S.turn === myRole ? ' <b>(your turn)</b>' : ' <i>(opponent’s turn)</i>';
+    if (myRole === 'X' && !oppJoined) parts = ['Waiting for an opponent. Share room code ', { t: currentRoomCode }];
+    else if (myRole === 'SPECTATOR') parts.unshift('Spectating. ');
+    else if (!S.win) parts.push(S.turn === myRole ? { t: ' (your turn)' } : { t: ' (opponent’s turn)', i: 1 });
   }
-  $('st').innerHTML = t;
+  setStatus(parts);
   $('p1Stats').textContent = cnt('X');
   $('p2Stats').textContent = cnt('O');
-
-  updateMoveLogUI();
-  lockControls();
-  renderPicker();
+  updateMoveLogUI(); lockControls(); renderPicker();
 }
 
-// Guests and spectators can't change rules or reset; Undo is off online
 function lockControls() {
-  const guest = currentTab === 'Online' && currentRoomCode && myRole !== 'X';
-  ['m', 'ins', 'sc', 'new'].forEach(id => $(id).disabled = !!guest);
+  const inRoom = currentTab === 'Online' && !!currentRoomCode;
+  const host = myRole === 'X', player = myRole === 'X' || myRole === 'O';
+  ['m', 'ins', 'sc'].forEach(id => $(id).disabled = inRoom && !host);
+  // No E is ever forced in Method 1 without Insane, so this setting can't apply there
+  const scIdle = $('m').value === '1' && !$('ins').checked;
+  if (scIdle) $('sc').disabled = true;
+  $('sc').title = scIdle ? 'Only used when an E is forced: Insane mode, or Methods 2 and 3' : '';
+  $('new').disabled = inRoom && !(host || (myRole === 'O' && (S.win || oppGone)));
   $('undo').disabled = currentTab === 'Online';
-  $('chatBox').classList.toggle('hidden', !(currentTab === 'Online' && currentRoomCode));
+  $('chatBox').classList.toggle('hidden', !inRoom);
+  const aiHuman = currentTab === 'AI' && $('aiPlayerSide').value !== 'BOTH_AI';
+  $('resignBtn').classList.toggle('hidden', !(!S.win && (aiHuman || (inRoom && player && oppJoined))));
+  $('claimBtn').classList.toggle('hidden', !(inRoom && player && oppJoined && oppGone && !S.win));
 }
 
 function renderPicker() {
   $('bd').classList.toggle('focus', focusMode);
   const p = $('gPicker');
   p.classList.toggle('hidden', !focusMode);
-  $('focusBtn').textContent = focusMode ? '🔍 Show all' : '🔍 Focus G';
+  $('focusBtn').textContent = focusMode ? 'Show all' : 'Focus G';
   if (!focusMode) return;
   if (!p.children.length) {
     for (let g = 0; g < 9; g++) {
@@ -584,380 +506,291 @@ function renderPicker() {
   }
   for (let g = 0; g < 9; g++) {
     const b = p.children[g], w = S.gw[g];
-    const live = [0, 1, 2, 3, 4, 5, 6, 7, 8].some(e => legalE(g, e));
+    const live = [0,1,2,3,4,5,6,7,8].some(e => legalE(g, e));
     b.textContent = GR[g] + (w ? (w === 'D' ? ' =' : ' ' + w) : '');
-    b.className = 'px-2 py-1 rounded border text-xs font-semibold ' +
-      (g === focusG ? 'bg-blue-600 text-white border-blue-600' : live ? 'bg-yellow-200 text-black border-yellow-500' : 'border-custom bg-card');
+    b.className = 'btn sm ' + (g === focusG ? 'btn-b' : live ? 'btn-y' : '');
   }
 }
 $('focusBtn').onclick = () => { focusMode = !focusMode; if (S.tg != null) focusG = S.tg; render(); };
 
 function updateMoveLogUI() {
-  const container = $('moveListContainer');
+  const box = $('moveListContainer');
   $('moveCounterBadge').textContent = S.log.length + (S.log.length === 1 ? ' Move' : ' Moves');
-
-  if (S.log.length === 0) {
-    container.innerHTML = '<div class="text-gray-400 italic text-center py-8 text-xs font-sans">No moves played yet. Start by clicking any tile!</div>';
-    return;
+  box.replaceChildren();
+  if (!S.log.length) {
+    const d = document.createElement('div');
+    d.className = 'muted text-center py-8 text-xs';
+    d.textContent = 'No moves yet. Tap any cell to start!';
+    box.appendChild(d); return;
   }
-
-  let html = '';
   S.log.forEach((mText, idx) => {
     const isP1 = idx % 2 === 0;
-    const playerLabel = isP1 ? 'Player 1 (X)' : 'Player 2 (O)';
-    const colorClass = isP1 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-teal-600 dark:text-teal-400 font-semibold';
-    html += `
-      <div class="flex items-center justify-between p-1.5 rounded bg-cell border border-custom hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-        <span class="text-gray-400 text-[10px]">#${idx + 1}</span>
-        <span class="${colorClass}">${playerLabel}</span>
-        <span class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[11px] font-bold">${mText}</span>
-      </div>
-    `;
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between p-1.5 rounded bg-cell';
+    row.style.border = '2px solid var(--border)';
+    const n = document.createElement('span'); n.className = 'muted text-[10px]'; n.textContent = '#' + (idx + 1);
+    const who = document.createElement('span'); who.className = 'font-semibold ' + (isP1 ? 'x' : 'o'); who.textContent = isP1 ? 'Player 1 (X)' : 'Player 2 (O)';
+    const mv = document.createElement('span'); mv.className = 'font-bold text-[12px]'; mv.textContent = String(mText).slice(0, 8);
+    row.append(n, who, mv); box.appendChild(row);
   });
-  container.innerHTML = html;
-  container.scrollTop = container.scrollHeight;
+  box.scrollTop = box.scrollHeight;
 }
 
-// AI Engine Logic
+// ================= AI ENGINE (alpha-beta search, iterative deepening) =================
 function getValidMoves() {
   const moves = [];
-  for (let g = 0; g < 9; g++) {
-    for (let e = 0; e < 9; e++) {
-      if (!legalE(g, e)) continue;
-      for (let i = 0; i < 9; i++) {
-        const k = g * 81 + e * 9 + i;
-        if (!S.c[k]) moves.push({ g, e, i });
-      }
-    }
+  for (let g = 0; g < 9; g++) for (let e = 0; e < 9; e++) {
+    if (!legalBase(g, e)) continue;
+    for (let i = 0; i < 9; i++) if (!S.c[g * 81 + e * 9 + i]) moves.push({ g, e, i });
   }
   return moves;
 }
-
 function isAITurn() {
   if (currentTab !== 'AI' || S.win) return false;
   const side = $('aiPlayerSide').value;
   return side === 'BOTH_AI' || side === S.turn;
 }
-
 function checkAndTriggerAI() {
-  if (currentTab !== 'AI' || S.win) {
-    $('aiStatus').classList.add('hidden');
-    return;
-  }
-
+  if (currentTab !== 'AI' || S.win) { $('aiStatus').classList.add('hidden'); return; }
   if (isAITurn()) {
     $('aiStatus').classList.remove('hidden');
     clearTimeout(aiTimer);
     aiTimer = setTimeout(makeAIMove, 350);
-  } else {
-    $('aiStatus').classList.add('hidden');
-  }
+  } else $('aiStatus').classList.add('hidden');
 }
 
-// --- Enhanced Strategic AI Engine ---
-const POS_WEIGHTS = [3, 2, 3, 2, 5, 2, 3, 2, 3]; // Center=5, Corner=3, Edge=2
+// Board values: 0 empty, 1 = X, 2 = O, 3 = draw
+const P = [3, 2, 3, 2, 4, 2, 3, 2, 3];
+const LNF = new Int8Array(LN.flat());
+const THROUGH = Array.from({ length: 9 }, (_, i) => LN.filter(l => l.includes(i)).map(l => l.filter(x => x !== i)));
+const TBL = new Int8Array(64);
+for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let d = 0; d < 4; d++) {
+  let nx = 0, no = 0, nd = 0;
+  [a, b, d].forEach(x => { if (x === 1) nx++; else if (x === 2) no++; else if (x === 3) nd++; });
+  let s = 0;
+  if (!nd && !(nx && no)) { if (nx === 2) s = 10; else if (nx === 1) s = 1; else if (no === 2) s = -10; else if (no === 1) s = -1; }
+  TBL[a * 16 + b * 4 + d] = s;
+}
+const MATE = 1e6, INF = 1e9;
+let ec, eew, egw, etg, ete, emc, ewin, eM, eIns, eSc, deadline, nodes, timedOut, NG = -1, NE = -1;
 
-function simulateMoveState(state, m) {
-  const k = m.g * 81 + m.e * 9 + m.i;
-  const c = state.c.slice();
-  const ew = state.ew.slice();
-  const gw = state.gw.slice();
-  const turn = state.turn;
-  const mc = state.mc + 1;
-
-  c[k] = turn;
-  const eIdx = m.g * 9 + m.e;
-  ew[eIdx] = dec(c.slice(m.g * 81 + m.e * 9, m.g * 81 + m.e * 9 + 9));
-  gw[m.g] = dec(ew.slice(m.g * 9, m.g * 9 + 9));
-  const win = dec(gw);
-
-  const M = +$('m').value, ins = $('ins').checked;
+function lines(arr, off) {
+  let s = 0;
+  for (let j = 0; j < 24; j += 3) s += TBL[arr[off + LNF[j]] * 16 + arr[off + LNF[j + 1]] * 4 + arr[off + LNF[j + 2]]];
+  return s;
+}
+function threatE(base, p) {
+  for (let j = 0; j < 24; j += 3) {
+    let n = 0, z = 0;
+    for (let q = 0; q < 3; q++) { const v = ec[base + LNF[j + q]]; if (v === p) n++; else if (!v) z++; }
+    if (n === 2 && z === 1) return true;
+  }
+  return false;
+}
+// Static evaluation from X's point of view
+function evalX() {
+  let s = 0;
+  for (let g = 0; g < 9; g++) { const w = egw[g]; if (w === 1) s += 120 * P[g]; else if (w === 2) s -= 120 * P[g]; }
+  s += lines(egw, 0) * 30;
+  for (let g = 0; g < 9; g++) {
+    if (egw[g]) continue;
+    const pg = P[g] / 3;
+    for (let e = 0; e < 9; e++) {
+      const idx = g * 9 + e, w = eew[idx];
+      if (w === 1) s += 12 * P[e] * pg; else if (w === 2) s -= 12 * P[e] * pg;
+      else if (!w) s += lines(ec, g * 81 + e * 9) * (P[e] * pg / 3);
+    }
+    s += lines(eew, g * 9) * 5 * pg;
+  }
+  return s;
+}
+function leaf(pl) {
+  let v = evalX(); if (pl !== 1) v = -v;
+  if (etg < 0) v += 20;
+  else {
+    let has = false;
+    for (let e = ete < 0 ? 0 : ete, eE = ete < 0 ? 9 : ete + 1; e < eE && !has; e++)
+      if (!eew[etg * 9 + e] && threatE(etg * 81 + e * 9, pl)) has = true;
+    if (has) v += 45;
+  }
+  return v;
+}
+function nextT(g, i, gDec, mc) {
   let tg, te;
-
-  if (M === 1) {
-    tg = m.i; te = ins ? m.i : null;
-  } else if (M === 2) {
-    if (mc % 3 === 0) { tg = m.i; te = ins ? m.i : null; }
-    else { tg = m.g; te = m.i; }
-  } else {
-    if (gw[m.g]) { tg = m.i; te = ins ? m.i : null; }
-    else { tg = m.g; te = m.i; }
-  }
-
-  if (gw[tg]) {
-    tg = null; te = null;
-  } else if (te != null && ew[tg * 9 + te]) {
-    te = null;
-    if ($('sc').value === 'b') tg = null;
-  }
-
-  const nextTurn = turn === 'X' ? 'O' : 'X';
-  return { c, ew, gw, turn: nextTurn, mc, tg, te, win };
+  if (eM === 1 || (eM === 2 && mc % 3 === 0) || (eM === 3 && gDec)) { tg = i; te = eIns ? i : -1; }
+  else { tg = g; te = i; }
+  if (egw[tg]) { tg = -1; te = -1; }
+  else if (te >= 0 && eew[tg * 9 + te]) { te = -1; if (eSc === 'b') tg = -1; }
+  NG = tg; NE = te;
 }
-
-function countLinesAndThreats(gridArray, player) {
-  let count = 0;
-  for (const L of LN) {
-    const vals = [gridArray[L[0]], gridArray[L[1]], gridArray[L[2]]];
-    const pCount = vals.filter(v => v === player).length;
-    const emptyCount = vals.filter(v => !v || v === 0).length;
-    if (pCount === 2 && emptyCount === 1) count += 1;
-    else if (pCount === 1 && emptyCount === 2) count += 0.25;
+function apply(k, pl) {
+  const g = (k / 81) | 0, e = ((k / 9) | 0) % 9, i = k % 9, idx = g * 9 + e, base = k - i;
+  ec[k] = pl; emc++;
+  let r = 0;
+  for (const [a, b] of THROUGH[i]) if (ec[base + a] === pl && ec[base + b] === pl) { r = pl; break; }
+  if (!r) { let f = true; for (let j = 0; j < 9; j++) if (!ec[base + j]) { f = false; break; } if (f) r = 3; }
+  eew[idx] = r;
+  let gr = 0;
+  if (r) {
+    const gb = g * 9;
+    if (r !== 3) for (const [a, b] of THROUGH[e]) if (eew[gb + a] === pl && eew[gb + b] === pl) { gr = pl; break; }
+    if (!gr) { let f = true; for (let j = 0; j < 9; j++) if (!eew[gb + j]) { f = false; break; } if (f) gr = 3; }
+    egw[g] = gr;
   }
-  return count;
+  if (gr) {
+    let w = 0;
+    if (gr !== 3) for (const [a, b] of THROUGH[g]) if (egw[a] === pl && egw[b] === pl) { w = pl; break; }
+    if (!w) { let f = true; for (let j = 0; j < 9; j++) if (!egw[j]) { f = false; break; } if (f) w = 3; }
+    ewin = w;
+  }
+  nextT(g, i, egw[g], emc); etg = NG; ete = NE;
 }
-
-function getValidMovesForState(state) {
-  const moves = [];
-  const legalEState = (g, e) => {
-    if (state.win || state.gw[g] || state.ew[g * 9 + e]) return false;
-    return (state.tg == null || state.tg === g) && (state.te == null || state.te === e);
-  };
-
-  for (let g = 0; g < 9; g++) {
-    for (let e = 0; e < 9; e++) {
-      if (!legalEState(g, e)) continue;
-      for (let i = 0; i < 9; i++) {
-        const k = g * 81 + e * 9 + i;
-        if (!state.c[k]) moves.push({ g, e, i });
+function gen() {
+  const out = [];
+  for (let g = etg < 0 ? 0 : etg, gE = etg < 0 ? 9 : etg + 1; g < gE; g++) {
+    if (egw[g]) continue;
+    for (let e = ete < 0 ? 0 : ete, eE = ete < 0 ? 9 : ete + 1; e < eE; e++) {
+      if (eew[g * 9 + e]) continue;
+      const b = g * 81 + e * 9;
+      for (let i = 0; i < 9; i++) if (!ec[b + i]) out.push(b + i);
+    }
+  }
+  return out;
+}
+// Cheap move-ordering score: wins, blocks, and where it sends the opponent
+function scoreMove(k, pl) {
+  const g = (k / 81) | 0, e = ((k / 9) | 0) % 9, i = k % 9, idx = g * 9 + e, base = k - i, op = 3 - pl;
+  const oe = eew[idx], og = egw[g], ow = ewin, otg = etg, ote = ete;
+  let s = P[i] * 3 + P[e] * 2;
+  for (const [a, b] of THROUGH[i]) {
+    if (ec[base + a] === pl && ec[base + b] === pl) s += 700;
+    else if (ec[base + a] === op && ec[base + b] === op) s += 300;
+  }
+  apply(k, pl);
+  if (ewin === pl) s += 1e5;
+  else {
+    if (egw[g] === pl) s += 3000;
+    if (etg < 0) s -= 150;
+    else if (ete >= 0 && threatE(etg * 81 + ete * 9, op)) s -= 500;
+  }
+  ec[k] = 0; emc--; eew[idx] = oe; egw[g] = og; ewin = ow; etg = otg; ete = ote;
+  return s;
+}
+function ordered(moves, pl, lim) {
+  const arr = moves.map(k => (scoreMove(k, pl) + 200000) * 1024 + k);
+  arr.sort((a, b) => b - a);
+  const n = Math.min(lim, arr.length), out = new Array(n);
+  for (let j = 0; j < n; j++) out[j] = arr[j] % 1024;
+  return out;
+}
+let BR1 = 14, BR2 = 9;
+function nega(d, al, be, pl, ply) {
+  if ((++nodes & 1023) === 0 && performance.now() > deadline) timedOut = true;
+  if (timedOut) return 0;
+  if (d <= 0) return leaf(pl);
+  const mv = ordered(gen(), pl, ply === 1 ? BR1 : BR2);
+  if (!mv.length) return leaf(pl);
+  let best = -INF;
+  for (const k of mv) {
+    const g = (k / 81) | 0, e = ((k / 9) | 0) % 9, idx = g * 9 + e;
+    const oe = eew[idx], og = egw[g], ow = ewin, otg = etg, ote = ete;
+    apply(k, pl);
+    const v = ewin ? (ewin === 3 ? 0 : MATE - ply) : -nega(d - 1, -be, -al, 3 - pl, ply + 1);
+    ec[k] = 0; emc--; eew[idx] = oe; egw[g] = og; ewin = ow; etg = otg; ete = ote;
+    if (timedOut) return 0;
+    if (v > best) best = v;
+    if (v > al) al = v;
+    if (al >= be) break;
+  }
+  return best;
+}
+function loadEngine() {
+  const m = { X: 1, O: 2, D: 3 };
+  ec = Uint8Array.from(S.c, v => m[v] || 0);
+  eew = Uint8Array.from(S.ew, v => m[v] || 0);
+  egw = Uint8Array.from(S.gw, v => m[v] || 0);
+  ewin = 0; etg = S.tg == null ? -1 : S.tg; ete = S.te == null ? -1 : S.te; emc = S.mc;
+  eM = +$('m').value; eIns = $('ins').checked; eSc = $('sc').value;   // settings read once per AI move
+}
+function aiPickMove(diff) {
+  loadEngine();
+  const pl = S.turn === 'X' ? 1 : 2;
+  const all = gen();
+  if (!all.length) return null;
+  let bestK;
+  if (diff === 'easy') bestK = all[Math.floor(Math.random() * all.length)];
+  else {
+    const hard = diff === 'hard';
+    BR1 = hard ? 14 : 10; BR2 = hard ? 9 : 6;
+    timedOut = false; nodes = 0; deadline = performance.now() + (hard ? 1500 : 400);
+    let root = ordered(all, pl, hard ? 30 : 16);
+    bestK = root[0];
+    if (S.mc === 0) bestK = root[Math.floor(Math.random() * Math.min(6, root.length))];
+    else if (root.length > 1 && !hard) {
+      // Medium: look 2 plies ahead and pick randomly among near-best moves
+      const sc = [];
+      for (const k of root) {
+        const g = (k / 81) | 0, e = ((k / 9) | 0) % 9, idx = g * 9 + e;
+        const oe = eew[idx], og = egw[g], ow = ewin, otg = etg, ote = ete;
+        apply(k, pl);
+        const v = ewin ? (ewin === 3 ? 0 : MATE) : -nega(1, -INF, INF, 3 - pl, 1);
+        ec[k] = 0; emc--; eew[idx] = oe; egw[g] = og; ewin = ow; etg = otg; ete = ote;
+        if (timedOut) break;
+        sc.push([v, k]);
+      }
+      if (sc.length) { const top = Math.max(...sc.map(x => x[0])); const pool = sc.filter(x => x[0] >= top - 35); bestK = pool[Math.floor(Math.random() * pool.length)][1]; }
+    } else if (root.length > 1) {
+      for (let d = 1; d <= 14; d++) {
+        let al = -INF, ib = -1; const scores = [];
+        for (const k of root) {
+          const g = (k / 81) | 0, e = ((k / 9) | 0) % 9, idx = g * 9 + e;
+          const oe = eew[idx], og = egw[g], ow = ewin, otg = etg, ote = ete;
+          apply(k, pl);
+          const v = ewin ? (ewin === 3 ? 0 : MATE) : -nega(d - 1, -INF, -al, 3 - pl, 1);
+          ec[k] = 0; emc--; eew[idx] = oe; egw[g] = og; ewin = ow; etg = otg; ete = ote;
+          if (timedOut) break;
+          scores.push([v, k]);
+          if (v > al) { al = v; ib = k; }
+        }
+        if (timedOut) break;
+        bestK = ib;
+        scores.sort((a, b) => b[0] - a[0]);
+        root = scores.map(x => x[1]);
+        if (Math.abs(al) > MATE - 100) break;
       }
     }
   }
-  return moves;
+  return { g: (bestK / 81) | 0, e: ((bestK / 9) | 0) % 9, i: bestK % 9 };
 }
-
-function evaluateState(state, aiPlayer) {
-  const oppPlayer = aiPlayer === 'X' ? 'O' : 'X';
-  if (state.win === aiPlayer) return 100000;
-  if (state.win === oppPlayer) return -100000;
-  if (state.win === 'D') return 0;
-
-  let score = 0;
-
-  // Macro G-grid evaluation
-  for (let g = 0; g < 9; g++) {
-    const w = state.gw[g];
-    if (w === aiPlayer) score += 1000 * POS_WEIGHTS[g];
-    else if (w === oppPlayer) score -= 1000 * POS_WEIGHTS[g];
-  }
-  score += countLinesAndThreats(state.gw, aiPlayer) * 300;
-  score -= countLinesAndThreats(state.gw, oppPlayer) * 320;
-
-  // Micro E-grid evaluation
-  for (let g = 0; g < 9; g++) {
-    if (state.gw[g]) continue;
-    for (let e = 0; e < 9; e++) {
-      const eIdx = g * 9 + e;
-      const ew = state.ew[eIdx];
-      if (ew === aiPlayer) {
-        score += 80 * POS_WEIGHTS[e];
-      } else if (ew === oppPlayer) {
-        score -= 80 * POS_WEIGHTS[e];
-      } else if (!ew) {
-        const eGridSlice = state.c.slice(g * 81 + e * 9, g * 81 + e * 9 + 9);
-        score += countLinesAndThreats(eGridSlice, aiPlayer) * 15;
-        score -= countLinesAndThreats(eGridSlice, oppPlayer) * 16;
-      }
-    }
-  }
-
-  // Cell positional value
-  for (let k = 0; k < 729; k++) {
-    const val = state.c[k];
-    if (val) {
-      const e = ((k / 9) | 0) % 9;
-      const i = k % 9;
-      const posVal = POS_WEIGHTS[e] + POS_WEIGHTS[i];
-      if (val === aiPlayer) score += posVal;
-      else score -= posVal;
-    }
-  }
-
-  return score;
-}
-
-function evaluateCandidateMove(m, aiPlayer, diff) {
-  const sim = simulateMoveState(S, m);
-  const oppPlayer = aiPlayer === 'X' ? 'O' : 'X';
-
-  // Instant Tesseract game win
-  if (sim.win === aiPlayer) return 1000000;
-
-  // Evaluate the resulting position from the AI's perspective
-  let score = evaluateState(sim, aiPlayer);
-
-  // Position control bonus
-  score += POS_WEIGHTS[m.i] * 5
-         + POS_WEIGHTS[m.e] * 8
-         + POS_WEIGHTS[m.g] * 12;
-
-  // Immediate E-grid and G-grid win incentives
-  const prevEWin = S.ew[m.g * 9 + m.e];
-  const newEWin = sim.ew[m.g * 9 + m.e];
-
-  if (!prevEWin && newEWin === aiPlayer) score += 400;
-  if (!S.gw[m.g] && sim.gw[m.g] === aiPlayer) score += 2000;
-
-  // Check whether this move blocks an opponent's local E-grid win
-  const oppECopy = S.c.slice(
-    m.g * 81 + m.e * 9,
-    m.g * 81 + m.e * 9 + 9
-  );
-
-  oppECopy[m.i] = oppPlayer;
-
-  if (line(oppECopy) === oppPlayer) score += 350;
-
-  // Analyse the opponent's possible next moves
-  const oppMoves = getValidMovesForState(sim);
-
-  if (oppMoves.length > 0) {
-    if (sim.tg == null) {
-      // A completely free move gives the opponent more options
-      score -= (diff === 'hard' ? 250 : 100);
-    }
-
-    // Scores are measured from OUR AI's perspective.
-    // The opponent will try to MINIMIZE our score, not maximize it.
-    let worstOppResponseScore = Infinity;
-
-    let oppCanWinE = false;
-    let oppCanWinG = false;
-
-    for (const om of oppMoves) {
-      const oppSim = simulateMoveState(sim, om);
-
-      // Giving the opponent an immediate Tesseract win is disastrous
-      if (oppSim.win === oppPlayer) {
-        return -900000;
-      }
-
-      // Check whether the opponent can win an E-grid
-      if (
-        !sim.ew[om.g * 9 + om.e] &&
-        oppSim.ew[om.g * 9 + om.e] === oppPlayer
-      ) {
-        oppCanWinE = true;
-      }
-
-      // Check whether the opponent can win a G-grid
-      if (
-        !sim.gw[om.g] &&
-        oppSim.gw[om.g] === oppPlayer
-      ) {
-        oppCanWinG = true;
-      }
-
-      // Evaluate the position after the opponent's response.
-      // A rational opponent chooses the response least favourable to us.
-      const respEval = evaluateState(oppSim, aiPlayer);
-
-      if (respEval < worstOppResponseScore) {
-        worstOppResponseScore = respEval;
-      }
-    }
-
-    // Penalize moves that allow immediate local or macro-grid wins
-    if (oppCanWinG) score -= 800;
-    if (oppCanWinE) score -= 250;
-
-    // Account for the opponent's strongest counterplay.
-    // Lower scores are worse for our AI, so use the minimum response score.
-    score += worstOppResponseScore * 0.4;
-  } else {
-    // Opponent has no legal moves
-    score += 150;
-  }
-
-  return score;
-}
-
-
 function makeAIMove() {
   if (!isAITurn()) { $('aiStatus').classList.add('hidden'); return; }
-  const valid = getValidMoves();
-  if (valid.length === 0 || S.win) {
-    $('aiStatus').classList.add('hidden');
-    return;
-  }
-
-  const diff = $('aiDifficulty').value;
-  let chosen;
-
-  if (diff === 'easy') {
-    chosen = valid[Math.floor(Math.random() * valid.length)];
-  } else {
-    const aiPlayer = S.turn;
-    let bestScore = -Infinity;
-    let candidates = [];
-
-    let pool = valid;
-    if (valid.length > 20) {
-      pool = valid
-        .map(m => ({ m, s: evaluateState(simulateMoveState(S, m), aiPlayer) + POS_WEIGHTS[m.i] * 5 + POS_WEIGHTS[m.e] * 8 }))
-        .sort((a, b) => b.s - a.s).slice(0, 20).map(o => o.m);
-    }
-    for (const m of pool) {
-      let score = evaluateCandidateMove(m, aiPlayer, diff);
-      
-      if (diff === 'medium') {
-        // Add slight randomness for Medium difficulty variability
-        score += (Math.random() - 0.5) * 60;
-      }
-
-      if (score > bestScore + 0.001) {
-        bestScore = score;
-        candidates = [m];
-      } else if (Math.abs(score - bestScore) <= 0.001) {
-        candidates.push(m);
-      }
-    }
-
-    chosen = candidates[Math.floor(Math.random() * candidates.length)];
-  }
-
-  if (chosen) play(chosen.g, chosen.e, chosen.i);
+  const chosen = aiPickMove($('aiDifficulty').value);
   $('aiStatus').classList.add('hidden');
+  if (chosen) { play(chosen.g, chosen.e, chosen.i); if ($('aiPlayerSide').value !== 'BOTH_AI') playPop(); }
 }
 
-// ================= FIREBASE MULTIPLAYER LOGIC =================
-
+// ================= FIREBASE MULTIPLAYER =================
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   return code;
 }
-
 function updateRoleBadge() {
   const badge = $('onlineRoleBadge');
-  if (!myRole) {
-    badge.classList.add('hidden');
-    return;
-  }
+  if (!myRole) { badge.classList.add('hidden'); return; }
   badge.classList.remove('hidden');
-  badge.textContent = `You: ${myRole}`;
-  if (myRole === 'X') badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-  else if (myRole === 'O') badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
-  else badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  badge.textContent = 'You: ' + myRole;
+  badge.className = 'badge ' + (myRole === 'X' ? 'x' : myRole === 'O' ? 'o' : '');
 }
-
 function showModal(title, message) {
-  $('modalTitle').textContent = title;
-  $('modalBody').textContent = message;
+  $('modalTitle').textContent = title; $('modalBody').textContent = message;
   $('customModal').classList.remove('hidden');
 }
 $('modalClose').onclick = () => $('customModal').classList.add('hidden');
 
-// ---- Seat persistence (survives refreshes) ----
-function saveSeat() {
-  try { localStorage.setItem('tesseractSeat', JSON.stringify({ code: currentRoomCode, role: myRole })); } catch (e) {}
-}
-function clearSeat() {
-  try { localStorage.removeItem('tesseractSeat'); } catch (e) {}
-}
+function saveSeat() { try { localStorage.setItem('tesseractSeat', JSON.stringify({ code: currentRoomCode, role: myRole })); } catch (e) {} }
+function clearSeat() { try { localStorage.removeItem('tesseractSeat'); } catch (e) {} }
 async function restoreSeat() {
   try {
     const s = JSON.parse(localStorage.getItem('tesseractSeat') || 'null');
@@ -972,11 +805,9 @@ async function restoreSeat() {
   } catch (e) { return false; }
 }
 
-// ---- Leave room when switching away from Online ----
 function leaveRoom() {
   if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
-  if (unsubChat) { unsubChat(); unsubChat = null; }
-  currentRoomCode = null; myRole = null; oppJoined = false;
+  currentRoomCode = null; myRole = null; oppJoined = false; oppGone = false; prevMc = null;
   $('chatLog').innerHTML = '';
   updateRoleBadge(); clearSeat();
 }
@@ -985,13 +816,10 @@ function addChat(m) {
   if (!m || typeof m.t !== 'string') return;
   const d = document.createElement('div');
   const who = document.createElement('b');
-  who.textContent = (m.r === 'SPECTATOR' ? '👁' : m.r) + ': ';
+  who.textContent = (m.r === 'SPECTATOR' ? 'Spectator' : String(m.r).slice(0, 1)) + ': ';
   who.className = m.r === 'X' ? 'x' : m.r === 'O' ? 'o' : '';
-  d.appendChild(who);
-  d.appendChild(document.createTextNode(m.t));
-  const log = $('chatLog');
-  log.appendChild(d);
-  log.scrollTop = log.scrollHeight;
+  d.appendChild(who); d.appendChild(document.createTextNode(m.t));
+  const log = $('chatLog'); log.appendChild(d); log.scrollTop = log.scrollHeight;
 }
 function sendChat() {
   const inp = $('chatInput'), t = inp.value.trim().slice(0, 200);
@@ -1002,115 +830,113 @@ function sendChat() {
 $('chatSend').onclick = sendChat;
 $('chatInput').onkeydown = e => { if (e.key === 'Enter') sendChat(); };
 
-async function createRoom() {
-  const code = generateRoomCode();
-  currentRoomCode = code;
-  oppJoined = false;
-  myRole = 'X';
+async function createRoomInner() {
+  let code;
+  do { code = generateRoomCode(); } while ((await get(ref(db, 'rooms/' + code))).exists());   // never overwrite a live room
+  currentRoomCode = code; oppJoined = false; oppGone = false; myRole = 'X';
   updateRoleBadge();
   $('roomCodeInput').value = code;
-
   init();
-  const roomRef = ref(db, 'rooms/' + code);
-  const initialState = {
+  await set(ref(db, 'rooms/' + code), {
     gameState: JSON.stringify(S),
-    settings: {
-      m: $('m').value,
-      ins: $('ins').checked,
-      sc: $('sc').value
-    },
-    playerX: true,
-    playerO: false
-  };
-
-  await set(roomRef, initialState);
-  saveSeat();
-  listenToRoom(code);
-  showModal("Room Created", `Room Code: ${code}. Share this code with Player 2!`);
+    settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value },
+    playerX: true, playerO: false, createdAt: Date.now()
+  });
+  saveSeat(); listenToRoom(code);
+  showModal('Room Created', 'Room Code: ' + code + '. Share this code with Player 2!');
 }
 
-async function joinRoom() {
+async function joinRoomInner() {
   const code = $('roomCodeInput').value.trim().toUpperCase();
-  if (!code || code.length !== 6) {
-    showModal("Error", "Please enter a valid 6-character room code.");
-    return;
-  }
-
-  const roomRef = ref(db, 'rooms/' + code);
-  const snapshot = await get(roomRef);
-
-  if (!snapshot.exists()) {
-    showModal("Error", "Room not found.");
-    return;
-  }
-
-  const data = snapshot.val();
-  currentRoomCode = code;
-
+  if (!code || code.length !== 6) { showModal('Error', 'Please enter a valid 6-character room code.'); return; }
+  if (code === currentRoomCode) { showModal('Already here', 'You are already in this room.'); return; }
+  const snapshot = await get(ref(db, 'rooms/' + code));
+  if (!snapshot.exists()) { showModal('Error', 'Room not found.'); return; }
+  currentRoomCode = code; oppGone = false;
   const tx = await runTransaction(ref(db, 'rooms/' + code + '/playerO'), cur => cur ? undefined : true);
-  if (tx.committed) {
-    myRole = 'O';
-  } else {
-    myRole = 'SPECTATOR';
-    showModal("Notice", "Room full! You are spectating.");
-  }
-
-  updateRoleBadge();
-  saveSeat();
-  listenToRoom(code);
+  if (tx.committed) myRole = 'O';
+  else { myRole = 'SPECTATOR'; showModal('Notice', 'Room full! You are spectating.'); }
+  updateRoleBadge(); saveSeat(); listenToRoom(code);
 }
 
+const errText = e => /permission/i.test((e && e.message) || '') ? 'Firebase blocked this request. Check the Rules tab in your Firebase console.' : 'Could not reach the server. Check your connection and try again.';
+async function createRoom() {
+  try { await createRoomInner(); } catch (e) { leaveRoom(); showModal('Could not create room', errText(e)); }
+}
+async function joinRoom() {
+  try { await joinRoomInner(); } catch (e) { leaveRoom(); showModal('Could not join room', errText(e)); }
+}
 function syncToFirebase() {
   if (!currentRoomCode) return;
-  const roomRef = ref(db, 'rooms/' + currentRoomCode);
-  return update(roomRef, {
+  return update(ref(db, 'rooms/' + currentRoomCode), {
     gameState: JSON.stringify({ ...S, hist: [] }),
     settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value }
-  });
+  }).catch(e => showModal('Move not saved', errText(e)));
+}
+
+// Reject malformed state coming from the network
+function validState(p) {
+  return p && Array.isArray(p.c) && p.c.length === 729 && Array.isArray(p.ew) && p.ew.length === 81 &&
+    Array.isArray(p.gw) && p.gw.length === 9 && Array.isArray(p.log) && (p.turn === 'X' || p.turn === 'O') &&
+    p.c.every(v => v === 0 || v === 'X' || v === 'O') && [0, 'X', 'O', 'D'].includes(p.win) &&
+    p.ew.every(v => [0, 'X', 'O', 'D'].includes(v)) && p.gw.every(v => [0, 'X', 'O', 'D'].includes(v));
 }
 
 function listenToRoom(code) {
   if (unsubscribeRoom) unsubscribeRoom();
-  const roomRef = ref(db, 'rooms/' + code);
-
-  unsubscribeRoom = onValue(roomRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) return;
-    oppJoined = !!data.playerO;
-
-    if (data.gameState) {
-      const parsed = JSON.parse(data.gameState);
-      S = parsed;
-      S.hist = [];
+  prevMc = null;
+  const base = 'rooms/' + code, subs = [];
+  // Separate listeners: chat messages no longer re-download or re-render the game
+  subs.push(onValue(ref(db, base + '/gameState'), sn => {
+    if (!sn.exists()) return;
+    try {
+      const p = JSON.parse(sn.val());
+      if (!validState(p)) return;
+      if (p.resigned !== 'X' && p.resigned !== 'O') delete p.resigned;
+      if (prevMc != null && p.mc > prevMc && (myRole === 'X' || myRole === 'O') && (p.turn === 'X' ? 'O' : 'X') !== myRole) playPop();
+      prevMc = p.mc;
+      S = p; S.hist = [];
       if (S.tg != null) focusG = S.tg;
-    }
-    if (data.settings) {
-      lastSettings = { m: data.settings.m, ins: data.settings.ins, sc: data.settings.sc };
-      $('m').value = data.settings.m;
-      $('ins').checked = data.settings.ins;
-      $('sc').value = data.settings.sc;
-    }
+    } catch (e) { return; }
     render();
-  });
-
-  if (unsubChat) unsubChat();
+  }));
+  subs.push(onValue(ref(db, base + '/settings'), sn => {
+    const s = sn.val(); if (!s) return;
+    lastSettings = { m: s.m, ins: s.ins, sc: s.sc };
+    $('m').value = s.m; $('ins').checked = !!s.ins; $('sc').value = s.sc;
+    lockControls();
+  }));
+  subs.push(onValue(ref(db, base + '/playerO'), sn => { oppJoined = !!sn.val(); render(); }));
+  subs.push(onValue(ref(db, base + '/presence'), sn => {
+    const v = sn.val() || {}, o = myRole === 'X' ? 'O' : 'X';
+    oppGone = (myRole === 'X' || myRole === 'O') && v[o] === false;
+    lockControls();
+  }));
+  if (myRole === 'X' || myRole === 'O') {
+    const pr = ref(db, base + '/presence/' + myRole);
+    subs.push(onValue(ref(db, '.info/connected'), s => {
+      if (s.val() === true) { onDisconnect(pr).set(false); set(pr, true); }
+    }));
+  }
   $('chatLog').innerHTML = '';
-  unsubChat = onChildAdded(query(ref(db, 'rooms/' + code + '/chat'), limitToLast(60)), cs => addChat(cs.val()));
+  subs.push(onChildAdded(query(ref(db, base + '/chat'), limitToLast(60)), cs => addChat(cs.val())));
+  unsubscribeRoom = () => subs.forEach(f => f());
 }
 
-// ---- Leave / resign handling ----
+// ---- Confirm / resign ----
 function needsLeaveConfirm() {
   return currentTab === 'Online' && !!currentRoomCode && (myRole === 'X' || myRole === 'O') && oppJoined && !S.win;
 }
-function askLeave() {
+function askConfirm(title, body, goLabel) {
   return new Promise(res => {
-    const m = $('leaveModal');
-    m.classList.remove('hidden');
+    $('leaveTitle').textContent = title; $('leaveBody').textContent = body; $('leaveGo').textContent = goLabel;
+    const m = $('leaveModal'); m.classList.remove('hidden');
     const done = v => { m.classList.add('hidden'); res(v); };
     $('leaveStay').onclick = () => done(false);
     $('leaveGo').onclick = () => done(true);
   });
 }
+const askLeave = () => askConfirm('Are you sure you want to leave?', 'Doing this will cause you to resign and the opponent will win.', 'Leave and resign');
 async function resign() {
   S.win = myRole === 'X' ? 'O' : 'X';
   S.resigned = myRole;
@@ -1118,72 +944,65 @@ async function resign() {
 }
 async function requestMode(mode) {
   if (mode === currentTab) return;
-  if (needsLeaveConfirm()) {
-    if (!(await askLeave())) return;
-    await resign();
-  }
+  if (needsLeaveConfirm()) { if (!(await askLeave())) return; await resign(); }
   setMode(mode);
 }
 
-$('btnCreateRoom').onclick = async () => {
-  if (needsLeaveConfirm()) {
-    if (!(await askLeave())) return;
+$('resignBtn').onclick = async () => {
+  if (S.win) return;
+  if (currentTab === 'AI') {
+    const side = $('aiPlayerSide').value;
+    if (side === 'BOTH_AI') return;
+    const human = side === 'O' ? 'X' : 'O';
+    if (!(await askConfirm('Resign this game?', 'The AI will be declared the winner.', 'Resign'))) return;
+    if (S.win) return;
+    clearTimeout(aiTimer);
+    S.hist.push(snap());
+    S.win = human === 'X' ? 'O' : 'X'; S.resigned = human;
+    render(); checkAndTriggerAI();
+  } else if (needsLeaveConfirm()) {
+    if (!(await askConfirm('Resign this game?', 'Your opponent will be declared the winner.', 'Resign'))) return;
+    if (S.win) return;
     await resign();
   }
+};
+$('claimBtn').onclick = async () => {
+  if (S.win || !oppGone) return;
+  S.win = myRole; S.resigned = myRole === 'X' ? 'O' : 'X';
+  try { await syncToFirebase(); } catch (e) {}
+};
+
+$('btnCreateRoom').onclick = async () => {
+  if (needsLeaveConfirm()) { if (!(await askLeave())) return; await resign(); }
   createRoom();
 };
 $('btnJoinRoom').onclick = async () => {
   const code = $('roomCodeInput').value.trim().toUpperCase();
-  if (needsLeaveConfirm() && code.length === 6 && code !== currentRoomCode) {
-    if (!(await askLeave())) return;
-    await resign();
-  }
+  if (needsLeaveConfirm() && code.length === 6 && code !== currentRoomCode) { if (!(await askLeave())) return; await resign(); }
   joinRoom();
 };
 
-// Downloads & Reset
 function downloadMovesLog() {
   if (!S || !S.log) return;
-  let content = `TIC TAC TOE TESSERACT - MOVE LOG\nDate: ${new Date().toLocaleString()}\n\n`;
-  S.log.forEach((move, index) => {
-    const player = (index % 2 === 0) ? 'Player 1 (X)' : 'Player 2 (O)';
-    content += `Move ${index + 1}: ${player} -> ${move}\n`;
-  });
-
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  let content = 'TIC TAC TOE TESSERACT - MOVE LOG\nDate: ' + new Date().toLocaleString() + '\n\n';
+  S.log.forEach((move, index) => { content += 'Move ' + (index + 1) + ': ' + (index % 2 === 0 ? 'Player 1 (X)' : 'Player 2 (O)') + ' -> ' + move + '\n'; });
+  const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `tesseract_game_log_${Date.now()}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = 'tesseract_game_log_' + Date.now() + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function setMode(mode) {
   clearTimeout(aiTimer);
   if (currentTab === 'Online' && mode !== 'Online') leaveRoom();
   currentTab = mode;
-  ['tabLocal', 'tabAI', 'tabOnline'].forEach(id => {
-    $(id).className = 'mode-tab py-2 px-4 border-b-2 font-medium border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300';
-  });
-
-  if (mode === 'Local') {
-    $('tabLocal').className = 'mode-tab py-2 px-4 border-b-2 font-medium border-blue-600 text-blue-600 dark:text-blue-400';
-    $('aiConfigPanel').classList.add('hidden');
-    $('onlineConfigPanel').classList.add('hidden');
-  } else if (mode === 'AI') {
-    $('tabAI').className = 'mode-tab py-2 px-4 border-b-2 font-medium border-blue-600 text-blue-600 dark:text-blue-400';
-    $('aiConfigPanel').classList.remove('hidden');
-    $('onlineConfigPanel').classList.add('hidden');
-  } else if (mode === 'Online') {
-    $('tabOnline').className = 'mode-tab py-2 px-4 border-b-2 font-medium border-blue-600 text-blue-600 dark:text-blue-400';
-    $('aiConfigPanel').classList.add('hidden');
-    $('onlineConfigPanel').classList.remove('hidden');
-  }
+  ['tabLocal', 'tabAI', 'tabOnline'].forEach(id => $(id).className = 'tab');
+  $({ Local: 'tabLocal', AI: 'tabAI', Online: 'tabOnline' }[mode]).className = 'tab on';
+  $('aiConfigPanel').classList.toggle('hidden', mode !== 'AI');
+  $('onlineConfigPanel').classList.toggle('hidden', mode !== 'Online');
   if (!restoring) resetGame();
 }
-
 $('tabLocal').onclick = () => requestMode('Local');
 $('tabAI').onclick = () => requestMode('AI');
 $('tabOnline').onclick = () => requestMode('Online');
@@ -1203,44 +1022,79 @@ function resetGame() {
   clearTimeout(aiTimer);
   lastSettings = { m: $('m').value, ins: $('ins').checked, sc: $('sc').value };
   init();
-  if (currentTab === 'Online' && currentRoomCode && myRole === 'X') {
-    syncToFirebase();
-  } else {
-    render();
-    checkAndTriggerAI();
-  }
+  if (currentTab === 'Online' && currentRoomCode && (myRole === 'X' || myRole === 'O')) syncToFirebase();
+  else { render(); checkAndTriggerAI(); }
 }
-
 $('new').onclick = () => {
   if (currentTab === 'Online' && currentRoomCode && S.mc > 0 && !S.win && !confirm('Start a new game for both players?')) return;
   resetGame();
 };
-['m', 'ins', 'sc', 'aiDifficulty', 'aiPlayerSide'].forEach(id => $(id).onchange = () => {
+// Rule changes restart the game
+['m', 'ins', 'sc'].forEach(id => $(id).onchange = () => {
   if (currentTab === 'Online' && currentRoomCode && S.mc > 0 && !S.win &&
       !confirm('Changing this restarts the game for both players. Continue?')) {
     $('m').value = lastSettings.m; $('ins').checked = lastSettings.ins; $('sc').value = lastSettings.sc;
+    lockControls();
     return;
   }
   resetGame();
 });
+// Difficulty and side change take effect immediately without restarting
+['aiDifficulty', 'aiPlayerSide'].forEach(id => $(id).onchange = () => {
+  clearTimeout(aiTimer); lockControls(); checkAndTriggerAI();
+});
 
+// Undo vs AI rewinds to the human's turn
 $('undo').onclick = () => {
-  if (!S.hist.length || currentTab === 'Online') return;
+  if (currentTab === 'Online' || !S.hist.length) return;
+  clearTimeout(aiTimer);
   const h = S.hist;
-  const p = JSON.parse(h.pop());
-  S = p;
-  S.hist = h;
-  render();
-  checkAndTriggerAI();
+  const both = currentTab === 'AI' && $('aiPlayerSide').value === 'BOTH_AI';
+  do { S = JSON.parse(h.pop()); S.hist = h; }
+  while (currentTab === 'AI' && !both && h.length && isAITurn());
+  render(); checkAndTriggerAI();
 };
 
-window.onload = function() {
+// ---- Pop sound (synthesised, no audio file needed) ----
+let audioCtx = null, soundOn = true, prevMc = null;
+try { soundOn = localStorage.getItem('tesseractSound') !== 'off'; } catch (e) {}
+function unlockAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (e) {}
+}
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio));
+function playPop() {
+  if (!soundOn) return;
+  unlockAudio(); if (!audioCtx) return;
+  const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(540, t); o.frequency.exponentialRampToValueAtTime(140, t + .09);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .005); g.gain.exponentialRampToValueAtTime(.0001, t + .14);
+  o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + .16);
+}
+function updateSoundBtn() { $('soundBtn').textContent = 'Sound: ' + (soundOn ? 'On' : 'Off'); }
+$('soundBtn').onclick = () => {
+  soundOn = !soundOn;
+  try { localStorage.setItem('tesseractSound', soundOn ? 'on' : 'off'); } catch (e) {}
+  updateSoundBtn(); playPop();
+};
+updateSoundBtn();
+
+// ---- Expand board ----
+$('expandBtn').onclick = () => {
+  const on = document.body.classList.toggle('expanded');
+  $('expandBtn').textContent = on ? 'Shrink' : 'Expand';
+  if (on) $('bd').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('expanded')) $('expandBtn').click(); });
+
+window.onload = function () {
   let th = null;
   try { th = localStorage.getItem('tesseractTheme'); } catch (e) {}
-  applyTheme(th || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-  build();
-  init();
-  render();
+  applyTheme(th || 'dark');
+  build(); init(); render();
   restoreSeat().then(ok => { if (!ok) setMode('AI'); });
 };
 </script>
