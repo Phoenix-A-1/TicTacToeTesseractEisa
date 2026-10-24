@@ -166,13 +166,78 @@ button:disabled, select:disabled, input:disabled { opacity:.4; cursor:not-allowe
 .thinking { animation:pulse-subtle 1.2s infinite ease-in-out; }
 details summary::-webkit-details-marker { display:none; }
 @media (prefers-reduced-motion: reduce) { .thinking,.c.last { animation:none; } }
-body.expanded #mainArea { flex-direction:column !important; align-items:center !important; max-width:100% !important; }
-body.expanded .wrap { flex:none; overflow:visible; padding:4px; }
-body.expanded .board { width:min(92vw, calc(100vh - 150px)); min-width:0; max-width:none; }
-body.expanded .c { font-size:calc(min(92vw, 100vh - 150px) * .028); }
-body.expanded .board.focus { width:min(90vw, calc(100vh - 210px)); }
-body.expanded .board.focus .c { font-size:calc(min(90vw, 100vh - 210px) * .085); }
-body.expanded #sidebarPanel { width:100% !important; max-width:1150px; height:280px !important; }
+/* Compact = smaller board (default is the large board). Button reads Expand when compact, Shrink when large. */
+body.compact #mainArea { flex-direction:column !important; align-items:center !important; max-width:100% !important; }
+body.compact .wrap { flex:none; overflow:visible; padding:4px; }
+body.compact .board { width:min(92vw, 820px); min-width:0; max-width:820px; }
+body.compact .c { font-size:calc(min(92vw, 820px) * .028); }
+body.compact .board.focus { width:min(90vw, 700px); max-width:700px; }
+body.compact .board.focus .c { font-size:calc(min(90vw, 700px) * .085); }
+body.compact #sidebarPanel { width:100% !important; max-width:1150px; height:280px !important; }
+
+/* Online: toggle buttons above board; panels open beside the board (left players / right chat) */
+#onlineBar { display:none; width:100%; max-width:1150px; margin:0 auto 8px; gap:8px; flex-wrap:wrap; align-items:center; }
+body.online-room #onlineBar { display:flex; }
+.online-toggle {
+  font:600 13px "Barlow Condensed","Barlow",sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  padding:7px 12px; border:1px solid var(--border); border-radius:4px; background:var(--card); color:var(--fg); cursor:pointer;
+}
+.online-toggle.on { border-color:var(--gold); color:var(--gold); background:color-mix(in srgb, var(--gold) 12%, var(--card)); }
+.clock-chip { font-variant-numeric:tabular-nums; transition:border-color .15s, background .15s, color .15s; }
+.clock-chip.clock-active { border-color:var(--gold); color:var(--gold); background:color-mix(in srgb, var(--gold) 14%, var(--panel2)); box-shadow:0 0 0 1px var(--gold); }
+.clock-chip.clock-low { border-color:#c81e32; color:#c81e32; }
+.clock-chip-inline { font-variant-numeric:tabular-nums; }
+.clock-chip-inline.clock-active { color:var(--gold); }
+.clock-chip-inline.clock-low { color:#c81e32; }
+#clockPair { display:none; }
+body.online-room #clockPair { display:inline-flex; }
+body.online-room #clock { display:none; }
+#matchRow {
+  width:100%; max-width:1400px; margin:0 auto;
+  display:flex; flex-wrap:nowrap; gap:12px;
+  align-items:flex-start; justify-content:center;
+  box-sizing:border-box; padding:0 8px;
+}
+/* Both panels stack on the LEFT so nothing overlaps the board on the right */
+#leftSideStack {
+  display:none; flex-direction:column; gap:10px;
+  width:220px; flex:0 0 220px; align-self:flex-start; z-index:2;
+}
+body.show-players #leftSideStack,
+body.show-chat #leftSideStack { display:flex; }
+#playersSide {
+  display:none;
+  padding:10px; border:1px solid var(--border); border-radius:6px; background:var(--card);
+}
+#chatSide {
+  display:none;
+  padding:10px; border:1px solid var(--border); border-radius:6px; background:var(--card);
+  flex-direction:column; max-height:min(50vh, 360px);
+}
+body.show-players #playersSide { display:block; }
+body.show-chat #chatSide { display:flex; }
+#chatLogSide { flex:1 1 auto; min-height:80px; max-height:280px; overflow-y:auto; }
+#boardCol {
+  flex:1 1 auto; min-width:0; max-width:100%;
+  display:flex; flex-direction:column; align-items:center;
+}
+/* Slightly shrink board when left stack is open so it still fits comfortably */
+body.show-players .board,
+body.show-chat .board {
+  min-width:0 !important;
+  width:min(96vw, 1000px) !important;
+  max-width:100% !important;
+}
+body.online-room #sTabChat { display:none !important; }
+@media (max-width: 900px) {
+  #matchRow { flex-wrap:wrap; }
+  #leftSideStack { width:100%; flex:1 1 100%; }
+  #chatSide { max-height:260px; }
+  body.show-players .board,
+  body.show-chat .board {
+    width:min(96vw, 1150px) !important;
+  }
+}
 .mini { display:grid; grid-template-columns:repeat(3,46px); gap:3px; padding:4px; border-radius:4px; width:max-content; }
 /* Fixed readable colors for rules diagrams (always visible) */
 .mini.g { background:#8aa376; } .mini.r { background:#c48d94; } .mini.b { background:#8fb0cf; }
@@ -357,6 +422,16 @@ figure { margin:0; } figcaption { margin-top:6px; font-size:13px; color:var(--mu
       </div>
       <div id="onlineConfigPanel" class="hidden">
         <div id="onlineRoom" class="flex items-center gap-2 flex-wrap">
+          <label class="text-xs font-semibold muted">Time:
+            <select id="tc" class="inp" title="Chess-style clock per player. If time runs out, the higher tile score wins.">
+              <option value="30">30 min</option>
+              <option value="60" selected>1 hour</option>
+              <option value="90">1 hour 30 min</option>
+              <option value="120">2 hours</option>
+              <option value="150">2 hours 30 min</option>
+              <option value="180">3 hours</option>
+            </select>
+          </label>
           <input id="roomCodeInput" type="text" placeholder="Room code" maxlength="6" class="inp uppercase w-28 tracking-wider">
           <button id="btnJoinRoom" class="btn btn-b sm">Join</button>
           <button id="btnCreateRoom" class="btn btn-g sm">Create room</button>
@@ -371,6 +446,10 @@ figure { margin:0; } figcaption { margin-top:6px; font-size:13px; color:var(--mu
     <div class="flex items-center gap-3 flex-wrap">
       <div id="st" class="text-sm font-semibold"></div>
       <span id="clock" class="badge">Time 0:00</span>
+      <span id="clockPair" class="hidden items-center gap-2">
+        <span id="clockX" class="badge clock-chip">X 1:00:00</span>
+        <span id="clockO" class="badge clock-chip">O 1:00:00</span>
+      </span>
       <span id="aiStatus" class="hidden text-xs font-semibold thinking o">The AI is thinking...</span>
       <span id="offerNote" class="hidden text-xs muted"></span>
     </div>
@@ -382,7 +461,7 @@ figure { margin:0; } figcaption { margin-top:6px; font-size:13px; color:var(--mu
       <button id="pauseBtn" class="btn btn-y sm hidden">Pause game</button>
       <button id="resignBtn" class="btn btn-r sm hidden">Resign</button>
       <button id="claimBtn" class="btn btn-g sm hidden">Opponent left: claim win</button>
-      <button id="expandBtn" class="btn btn-p sm">Expand</button>
+      <button id="expandBtn" class="btn btn-p sm">Shrink</button>
       <button id="focusBtn" class="btn btn-p sm">Focus G</button>
     </div>
   </div>
@@ -390,12 +469,55 @@ figure { margin:0; } figcaption { margin-top:6px; font-size:13px; color:var(--mu
   <div id="gPicker" class="hidden mb-2 flex gap-1.5 flex-wrap"></div>
 
   <div id="mainArea" class="flex flex-col gap-4 items-center">
-    <div class="wrap flex-1 flex flex-col items-center justify-center min-w-0 gap-3">
-      <div id="pauseBanner" class="hidden card p-3 w-full text-sm" style="max-width:1150px">
-        <b>Game paused.</b> <span id="pauseText" class="muted"></span>
-        <div class="mt-2 flex gap-2 items-center flex-wrap"><button id="resumeBtn" class="btn btn-g sm">Resume game</button><span id="resumeHint" class="text-xs muted"></span></div>
+    <!-- Online-only: buttons stay up top; panels open beside the board -->
+    <div id="onlineBar">
+      <button type="button" id="btnPlayersToggle" class="online-toggle">Open player list</button>
+      <button type="button" id="btnChatToggle" class="online-toggle">Open chat</button>
+    </div>
+
+    <div id="matchRow">
+      <!-- LEFT: players + chat stacked (nothing on the right = no board overlap) -->
+      <div id="leftSideStack">
+        <aside id="playersSide" class="text-sm">
+          <div class="lbl mb-2">Players</div>
+          <div id="playerCardX" class="mb-2 p-2 rounded" style="background:var(--panel2);border:1px solid var(--border)">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <b id="pcXName" class="x player-clickable cursor-pointer">Player X</b>
+              <span class="badge text-[10px]">X</span>
+            </div>
+            <div id="pcXStats" class="text-xs muted mb-1">E 0 · G 0</div>
+            <div id="pcXClock" class="text-xs font-bold mb-2 clock-chip-inline">—</div>
+            <div id="pcXActions" class="flex gap-1 flex-wrap"></div>
+          </div>
+          <div id="playerCardO" class="p-2 rounded" style="background:var(--panel2);border:1px solid var(--border)">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <b id="pcOName" class="o player-clickable cursor-pointer">Player O</b>
+              <span class="badge text-[10px]">O</span>
+            </div>
+            <div id="pcOStats" class="text-xs muted mb-1">E 0 · G 0</div>
+            <div id="pcOClock" class="text-xs font-bold mb-2 clock-chip-inline">—</div>
+            <div id="pcOActions" class="flex gap-1 flex-wrap"></div>
+          </div>
+        </aside>
+
+        <aside id="chatSide" class="text-sm">
+          <div class="lbl mb-2">Chat</div>
+          <div id="chatLogSide" class="text-xs space-y-0.5 mb-2"></div>
+          <div class="flex gap-1 mt-auto">
+            <input id="chatInputSide" maxlength="200" placeholder="Message…" class="inp flex-1 min-w-0">
+            <button id="chatSendSide" class="btn btn-b sm">Send</button>
+          </div>
+        </aside>
       </div>
-      <div class="board" id="bd"></div>
+
+      <!-- CENTER / RIGHT: board only -->
+      <div id="boardCol" class="wrap gap-3">
+        <div id="pauseBanner" class="hidden card p-3 w-full text-sm" style="max-width:1150px">
+          <b>Game paused.</b> <span id="pauseText" class="muted"></span>
+          <div class="mt-2 flex gap-2 items-center flex-wrap"><button id="resumeBtn" class="btn btn-g sm">Resume game</button><span id="resumeHint" class="text-xs muted"></span></div>
+        </div>
+        <div class="board" id="bd"></div>
+      </div>
     </div>
 
     <aside id="sidebarPanel" class="w-full card p-3 flex flex-col" style="height:340px;max-width:1150px">
@@ -473,11 +595,18 @@ figure { margin:0; } figcaption { margin-top:6px; font-size:13px; color:var(--mu
   <div id="profileLogin" class="card p-6 text-sm">Log in or create an account to see your profile, stats, and saved/paused game history. <button class="btn btn-g sm ml-2" data-login>Log in</button></div>
   <div id="profileBody" class="space-y-4">
     <section class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div><div class="lbl">Profile</div><div id="profName" class="text-2xl font-bold"></div></div>
-      <button id="logoutBtn" class="btn btn-r sm">Log out</button>
+      <div>
+        <div class="lbl" id="profLabel">Profile</div>
+        <div id="profName" class="text-2xl font-bold"></div>
+        <div id="profSub" class="text-xs muted hidden"></div>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button id="profBackBtn" class="btn sm hidden">← My profile</button>
+        <button id="logoutBtn" class="btn btn-r sm">Log out</button>
+      </div>
     </section>
     <section id="profStats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"></section>
-    <section class="card p-4"><h2 class="lbl">Open online games</h2><div id="openList" class="space-y-2"></div></section>
+    <section id="openGamesSection" class="card p-4"><h2 class="lbl">Open online games</h2><div id="openList" class="space-y-2"></div></section>
     <section class="card p-4"><h2 class="lbl">Recent games</h2><div id="gameList" class="space-y-2"></div></section>
   </div>
 </main>
@@ -851,13 +980,16 @@ let me = null;
 let guestName = 'Guest_' + Math.floor(1000 + Math.random() * 9000);
 let currentRoomCode = null, myRole = null, unsubscribeRoom = null, restoring = false;
 let roomStatus = 'active', roomPausedAt = 0, roomExpires = 0, roomNames = {}, roomUids = {}, roomOffer = null, presence = {}, lastOpenKey = '', prevMc = null;
-let lastSettings = { m: '1', ins: false, sc: 'g' };
+let lastSettings = { m: '1', ins: false, sc: 'g', tc: '60' };
+/* Chess-style clocks (ms). Only the side to move ticks while room is active. */
+let timeControlMs = 0, timeLeftX = 0, timeLeftO = 0, clockSide = null, clockAt = 0, timeoutHandled = false;
 let oppJoined = false, oppGone = false, focusMode = false, focusG = 0, aiTimer = null, aiBusy = false;
 const recordedIds = new Set();
 let anSource = null, anResult = null, anRunning = false;
 let friendsData = {}, reqData = {}, invData = {}, openData = {}, friendOn = {}, statusUnsubs = [], userUnsubs = [], profGames = [];
 const shownInv = new Set();
 let targetPlayerUid = null, targetPlayerName = '';
+let viewingUid = null, viewingName = '';
 
 function toast(msg, actions, ms) {
   const t = el('div', 'toast'); t.append(el('div', 'text-sm font-medium', msg));
@@ -976,8 +1108,10 @@ function play(g, e, i) {
 
   S.turn = S.turn === 'X' ? 'O' : 'X';
   if (S.tg != null) focusG = S.tg;
-  if (currentTab === 'Online' && currentRoomCode) syncToFirebase();
-  else { render(); checkAndTriggerAI(); }
+  if (currentTab === 'Online' && currentRoomCode) {
+    const clockExtra = clockPayloadAfterMove();
+    syncToFirebase(clockExtra);
+  } else { render(); checkAndTriggerAI(); }
 }
 
 function build() {
@@ -1013,7 +1147,104 @@ function gameMs() {
   const end = S.endedAt || (currentTab === 'Online' && roomStatus === 'paused' && roomPausedAt ? roomPausedAt : Date.now());
   return end - S.t0 - (S.pausedMs || 0);
 }
-setInterval(() => { $('clock').textContent = 'Time ' + fmtDur(gameMs()); }, 1000);
+function fmtClockMs(ms) {
+  ms = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(ms / 3600), m = Math.floor((ms % 3600) / 60), s = ms % 60;
+  if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+function boardPoints(p) {
+  let cells = 0, e = 0, g = 0;
+  for (let i = 0; i < 729; i++) if (S.c[i] === p) cells++;
+  for (let i = 0; i < 81; i++) if (S.ew[i] === p) e++;
+  for (let i = 0; i < 9; i++) if (S.gw[i] === p) g++;
+  return { total: cells + 3 * e + 9 * g, cells, e, g };
+}
+function liveTimeLeft(side) {
+  let base = side === 'X' ? timeLeftX : timeLeftO;
+  if (!timeControlMs || S.win || roomStatus !== 'active') return base;
+  if (clockSide === side && clockAt) base = Math.max(0, base - (Date.now() - clockAt));
+  return base;
+}
+function clockPayloadAfterMove() {
+  if (!timeControlMs) return {};
+  const now = Date.now();
+  let lx = timeLeftX, lo = timeLeftO;
+  if (clockSide && clockAt && roomStatus === 'active') {
+    const elapsed = Math.max(0, now - clockAt);
+    if (clockSide === 'X') lx = Math.max(0, lx - elapsed);
+    else lo = Math.max(0, lo - elapsed);
+  }
+  timeLeftX = lx; timeLeftO = lo;
+  const next = S.win ? null : S.turn;
+  clockSide = next;
+  clockAt = next ? now : 0;
+  return { timeLeftX: lx, timeLeftO: lo, clockSide: next, clockAt: next ? now : null, timeControlMs };
+}
+function freezeClocksForPause() {
+  if (!timeControlMs) return {};
+  const now = Date.now();
+  let lx = timeLeftX, lo = timeLeftO;
+  if (clockSide && clockAt) {
+    const elapsed = Math.max(0, now - clockAt);
+    if (clockSide === 'X') lx = Math.max(0, lx - elapsed);
+    else lo = Math.max(0, lo - elapsed);
+  }
+  timeLeftX = lx; timeLeftO = lo;
+  clockAt = 0;
+  return { timeLeftX: lx, timeLeftO: lo, clockSide: clockSide || S.turn, clockAt: null };
+}
+function endByTimeout() {
+  if (S.win || timeoutHandled || !timeControlMs) return;
+  timeoutHandled = true;
+  const px = boardPoints('X'), po = boardPoints('O');
+  let w = 'D';
+  if (px.total > po.total) w = 'X';
+  else if (po.total > px.total) w = 'O';
+  endGame(w, 'timeout');
+  S.scores = { X: px.total, O: po.total };
+  clockSide = null; clockAt = 0;
+  if (currentRoomCode) {
+    syncToFirebase({
+      timeLeftX: liveTimeLeft('X'), timeLeftO: liveTimeLeft('O'),
+      clockSide: null, clockAt: null, status: 'finished', offer: null
+    });
+  }
+  render();
+}
+function updateClockUI() {
+  const pair = $('clockPair'), cx = $('clockX'), co = $('clockO');
+  if (!pair || !cx || !co) return;
+  const online = currentTab === 'Online' && !!currentRoomCode && timeControlMs > 0;
+  pair.style.display = online ? 'inline-flex' : 'none';
+  if (!online) return;
+  const lx = liveTimeLeft('X'), lo = liveTimeLeft('O');
+  const nm = names();
+  cx.textContent = (nm.X || 'X') + ' ' + fmtClockMs(lx);
+  co.textContent = (nm.O || 'O') + ' ' + fmtClockMs(lo);
+  const active = roomStatus === 'active' && !S.win ? clockSide : null;
+  cx.classList.toggle('clock-active', active === 'X');
+  co.classList.toggle('clock-active', active === 'O');
+  cx.classList.toggle('clock-low', lx <= 5 * 60 * 1000);
+  co.classList.toggle('clock-low', lo <= 5 * 60 * 1000);
+  const pcx = $('pcXClock'), pco = $('pcOClock');
+  if (pcx) {
+    pcx.textContent = fmtClockMs(lx);
+    pcx.classList.toggle('clock-active', active === 'X');
+    pcx.classList.toggle('clock-low', lx <= 5 * 60 * 1000);
+  }
+  if (pco) {
+    pco.textContent = fmtClockMs(lo);
+    pco.classList.toggle('clock-active', active === 'O');
+    pco.classList.toggle('clock-low', lo <= 5 * 60 * 1000);
+  }
+  // Flag if a side ran out
+  if (!S.win && roomStatus === 'active' && timeControlMs && (lx <= 0 || lo <= 0)) endByTimeout();
+}
+setInterval(() => {
+  $('clock').textContent = 'Time ' + fmtDur(gameMs());
+  updateClockUI();
+}, 250);
 
 function currentGame() {
   let myR = '';
@@ -1023,12 +1254,31 @@ function currentGame() {
   return {
     id: S.id, t: S.endedAt || Date.now(), dur: Math.max(0, gameMs()), mode: currentTab === 'AI' ? 'ai' : currentTab === 'Online' ? 'online' : 'local',
     myRole: myR, names: names(), winner: S.win || '', result, how: S.resigned ? S.resigned + ' resigned' : (S.how || ''),
-    cfg: S.cfg || { m: $('m').value, ins: $('ins').checked, sc: $('sc').value }, ai: S.ai || null, n: S.log.length, log: S.log.slice(0, 800)
+    cfg: S.cfg || { m: $('m').value, ins: $('ins').checked, sc: $('sc').value, tc: $('tc') ? $('tc').value : '60' },
+    ai: S.ai || null, n: S.log.length, log: S.log.slice(0, 800),
+    scores: S.scores || null, timeControlMs: timeControlMs || null
   };
 }
 function maybeRecord() {
   if (!S.win || !S.id || recordedIds.has(S.id) || !me || !S.log.length) return;
   if (currentTab === 'Online' && myRole !== 'X' && myRole !== 'O') return;
+  // AI games are opt-in only
+  if (currentTab === 'AI') {
+    const offerKey = S.id + '_ai_offer';
+    if (recordedIds.has(offerKey)) return;
+    recordedIds.add(offerKey);
+    const gid = S.id;
+    toast('Save this AI game to your profile?', [
+      { label: 'Save', cls: 'btn-g', fn: () => {
+        if (recordedIds.has(gid)) return;
+        recordedIds.add(gid);
+        set(ref(db, 'userGames/' + me.uid + '/' + gid), currentGame()).catch(() => {});
+        toast('Game saved to your profile.');
+      } },
+      { label: 'No thanks', fn: () => {} }
+    ], 20000);
+    return;
+  }
   recordedIds.add(S.id);
   set(ref(db, 'userGames/' + me.uid + '/' + S.id), currentGame()).catch(() => {});
 }
@@ -1064,7 +1314,8 @@ $('paAddFriend').onclick = async () => {
 };
 $('paViewProfile').onclick = () => {
   $('playerActionModal').classList.add('hidden');
-  toast('Viewing ' + targetPlayerName + '\'s match record.');
+  if (!targetPlayerUid) { toast('That player is a guest — no public profile.'); return; }
+  openOtherProfile(targetPlayerUid, targetPlayerName);
 };
 
 function render() {
@@ -1089,8 +1340,12 @@ function render() {
   const nm = names();
   let parts;
   if (S.win) {
-    if (S.win === 'D') parts = [{ t: 'Draw' + (S.how === 'agreed' ? ' (agreed)' : S.how === 'expired' ? ' (paused game expired)' : '') + '.' }];
-    else parts = [{ t: S.win + ' (' + nm[S.win] + ') wins' + (S.resigned ? ', ' + S.resigned + ' resigned' : S.how === 'left' ? ', opponent left' : '') + '!', c: cl(S.win) }];
+    if (S.win === 'D') {
+      if (S.how === 'timeout' && S.scores) parts = [{ t: 'Draw on time — tiles ' + S.scores.X + '–' + S.scores.O + '.' }];
+      else parts = [{ t: 'Draw' + (S.how === 'agreed' ? ' (agreed)' : S.how === 'expired' ? ' (paused game expired)' : '') + '.' }];
+    } else if (S.how === 'timeout' && S.scores) {
+      parts = [{ t: S.win + ' (' + nm[S.win] + ') wins on time — tiles ' + S.scores.X + '–' + S.scores.O + ' (cell+1, E+3, G+9).', c: cl(S.win) }];
+    } else parts = [{ t: S.win + ' (' + nm[S.win] + ') wins' + (S.resigned ? ', ' + S.resigned + ' resigned' : S.how === 'left' ? ', opponent left' : '') + '!', c: cl(S.win) }];
   } else {
     parts = [{ t: S.turn, c: cl(S.turn) }, ' to move, '];
     if (S.tg == null) parts.push('free move: play any open square');
@@ -1108,14 +1363,76 @@ function render() {
   $('p1Name').onclick = () => openPlayerOptions('X');
   $('p2Name').onclick = () => openPlayerOptions('O');
   $('clock').textContent = 'Time ' + fmtDur(gameMs());
+  updateOnlineLayout();
+  renderPlayersPanel();
   updateMoveLogUI(); lockControls(); renderPicker(); renderAnalysisPanel(true);
   maybeRecord(); syncOpenEntry();
+}
+
+function updateOnlineLayout() {
+  const inRoom = currentTab === 'Online' && !!currentRoomCode;
+  document.body.classList.toggle('online-room', inRoom);
+}
+
+function renderPlayersPanel() {
+  const inRoom = currentTab === 'Online' && !!currentRoomCode;
+  if (!inRoom) return;
+  const nm = names();
+  const c = p => 'E ' + S.ew.filter(x => x === p).length + ' · G ' + S.gw.filter(x => x === p).length;
+  $('pcXName').textContent = nm.X || 'Player X';
+  $('pcOName').textContent = nm.O || 'Waiting…';
+  $('pcXStats').textContent = c('X');
+  $('pcOStats').textContent = c('O');
+  $('pcXName').onclick = () => openPlayerOptions('X');
+  $('pcOName').onclick = () => openPlayerOptions('O');
+  fillPlayerActions('X', $('pcXActions'));
+  fillPlayerActions('O', $('pcOActions'));
+  updateClockUI();
+}
+
+function fillPlayerActions(role, box) {
+  box.replaceChildren();
+  const uid = roomUids[role];
+  const name = roomNames[role];
+  if (!name || name === 'Waiting…') {
+    box.append(el('span', 'muted text-xs', 'Waiting for player…'));
+    return;
+  }
+  // Self: no actions
+  if (me && uid && uid === me.uid) {
+    box.append(el('span', 'muted text-xs', 'You'));
+    return;
+  }
+  // Guest: only note
+  if (!uid) {
+    box.append(el('span', 'muted text-xs', 'Guest'));
+    return;
+  }
+  const isFriend = !!(me && friendsData[uid]);
+  if (me && !isFriend) {
+    const add = el('button', 'btn btn-b sm', 'Add friend');
+    add.onclick = async () => {
+      if (!me) return openAuth('login');
+      try {
+        await set(ref(db, 'requests/' + uid + '/' + me.uid), { name: me.name, ts: Date.now() });
+        toast('Friend request sent to ' + name + '.');
+        add.textContent = 'Request sent';
+        add.disabled = true;
+      } catch (e) { showModal('Error', errText(e)); }
+    };
+    box.append(add);
+  } else if (isFriend) {
+    box.append(el('span', 'muted text-xs', 'Friends'));
+  }
+  const view = el('button', 'btn sm', 'View profile');
+  view.onclick = () => openOtherProfile(uid, name);
+  box.append(view);
 }
 
 function lockControls() {
   const inRoom = currentTab === 'Online' && !!currentRoomCode;
   const host = myRole === 'X', player = myRole === 'X' || myRole === 'O';
-  ['m', 'ins', 'sc'].forEach(id => $(id).disabled = inRoom && !host);
+  ['m', 'ins', 'sc', 'tc'].forEach(id => { if ($(id)) $(id).disabled = inRoom && !host; });
   const scIdle = $('m').value === '1' && !$('ins').checked;
   if (scIdle) $('sc').disabled = true;
   $('btnLeaveRoom').classList.toggle('hidden', !inRoom);
@@ -1295,7 +1612,12 @@ $('logoutBtn').onclick = async () => { await signOut(auth); showView('play'); op
 function updateAccountUI() {
   $('accountBtn').textContent = me ? me.name : 'Log in';
   $('accountBtn').className = me ? 'btn btn-p sm' : 'btn btn-g sm';
-  ['friends', 'profile'].forEach(v => { $(v + 'Login').classList.toggle('hidden', !!me); $(v + 'Body').classList.toggle('hidden', !me); });
+  // Friends always requires login. Profile body is visible when logged in OR when viewing another player's public record.
+  const showProfileBody = !!me || !!(viewingUid);
+  $('friendsLogin').classList.toggle('hidden', !!me);
+  $('friendsBody').classList.toggle('hidden', !me);
+  $('profileLogin').classList.toggle('hidden', showProfileBody);
+  $('profileBody').classList.toggle('hidden', !showProfileBody);
   lockControls();
 }
 
@@ -1344,8 +1666,11 @@ function renderFriends() {
     const f = friendsData[fu], row = el('div', 'row'), left = el('div', 'flex items-center');
     left.append(el('b', null, String(f.name)));
     const d = el('span', 'dot' + (friendOn[fu] ? '' : ' off')); d.title = friendOn[fu] ? 'Online' : 'Offline'; left.append(d);
+    const act = el('div', 'flex gap-2 flex-wrap');
+    const viewBtn = el('button', 'btn btn-b sm', 'Profile'); viewBtn.onclick = () => openOtherProfile(fu, String(f.name));
     const inv = el('button', 'btn btn-g sm', 'Invite to game'); inv.onclick = () => inviteFriend(fu, f.name);
-    row.append(left, inv); box.append(row);
+    act.append(viewBtn, inv);
+    row.append(left, act); box.append(row);
   });
 }
 function renderRequests() {
@@ -1360,8 +1685,11 @@ function renderRequests() {
   });
 }
 async function acceptRequest(fu, fname) {
+  if (!me) return openAuth('login');
   try {
     const t = Date.now();
+    // Write both sides of the friendship. Rules must allow:
+    //   friends/$uid/$friendUid write if $uid === auth.uid OR $friendUid === auth.uid
     await set(ref(db, 'friends/' + me.uid + '/' + fu), { name: fname, t });
     await set(ref(db, 'friends/' + fu + '/' + me.uid), { name: me.name, t });
     await remove(ref(db, 'requests/' + me.uid + '/' + fu));
@@ -1414,18 +1742,47 @@ function handleInvites() {
   });
 }
 
+async function openOtherProfile(uid, name) {
+  if (!uid) { toast('That player is a guest — no public profile.'); return; }
+  viewingUid = uid;
+  viewingName = name || 'Player';
+  updateAccountUI();
+  showView('profile');
+}
 async function loadProfile() {
-  if (!me) return;
+  const isOther = !!(viewingUid && me && viewingUid !== me.uid);
+  const uid = isOther ? viewingUid : (me && me.uid);
+  if (!uid) {
+    // Not logged in and not viewing anyone — show login panel only
+    profGames = [];
+    renderProfile();
+    return;
+  }
   try {
-    const sn = await get(query(ref(db, 'userGames/' + me.uid), limitToLast(100)));
+    const sn = await get(query(ref(db, 'userGames/' + uid), limitToLast(100)));
     const arr = []; sn.forEach(c => { const v = c.val(); if (v && v.log) arr.push(v); });
     arr.sort((a, b) => (b.t || 0) - (a.t || 0)); profGames = arr;
   } catch (e) { profGames = []; }
   renderProfile();
 }
 function renderProfile() {
-  if (!me) return;
-  $('profName').textContent = me.name;
+  const isOther = !!(viewingUid && (!me || viewingUid !== me.uid));
+  const displayName = isOther ? (viewingName || 'Player') : (me ? me.name : '');
+  if (!me && !isOther) return;
+
+  $('profName').textContent = displayName;
+  $('profLabel').textContent = isOther ? 'Player profile' : 'Profile';
+  const sub = $('profSub');
+  if (isOther) {
+    sub.textContent = 'Public match record';
+    sub.classList.remove('hidden');
+  } else {
+    sub.classList.add('hidden');
+  }
+  $('logoutBtn').classList.toggle('hidden', isOther || !me);
+  $('profBackBtn').classList.toggle('hidden', !isOther);
+  $('openGamesSection').classList.toggle('hidden', isOther || !me);
+
   const rated = profGames.filter(g => g.mode !== 'local' && ['win', 'loss', 'draw'].includes(g.result));
   const w = rated.filter(g => g.result === 'win').length, l = rated.filter(g => g.result === 'loss').length, d = rated.filter(g => g.result === 'draw').length;
   const accs = rated.map(g => g.myRole === 'X' ? g.accX : g.myRole === 'O' ? g.accO : null).filter(a => typeof a === 'number');
@@ -1433,7 +1790,7 @@ function renderProfile() {
   const box = $('profStats'); box.replaceChildren();
   stats.forEach(([k, v]) => { const c = el('div', 'card p-3'); c.append(el('div', 'text-xs muted', k), el('div', 'text-xl font-bold', String(v))); box.append(c); });
   const list = $('gameList'); list.replaceChildren();
-  if (!profGames.length) list.append(el('div', 'muted text-xs', 'No games yet. Log in and play to build your history.'));
+  if (!profGames.length) list.append(el('div', 'muted text-xs', isOther ? 'No public games yet.' : 'No games yet. Log in and play to build your history.'));
   profGames.forEach(g => {
     const row = el('div', 'row flex-wrap'), left = el('div', 'text-xs');
     const opp = g.mode === 'ai' ? (g.myRole === 'X' ? g.names.O : g.names.X) : g.mode === 'online' ? (g.myRole === 'X' ? g.names.O : g.names.X) : 'Pass & Play';
@@ -1441,9 +1798,16 @@ function renderProfile() {
     const accMe = g.myRole === 'X' ? g.accX : g.myRole === 'O' ? g.accO : null;
     left.append(el('b', g.result === 'win' ? 'o' : g.result === 'loss' ? 'x' : '', res), document.createTextNode(' vs ' + opp + ' · ' + METHODS[(+g.cfg.m || 1) - 1].split(' (')[0] + (g.cfg.ins ? ' Insane' : '') + ' · ' + fmtDur(g.dur || 0) + ' · ' + g.n + ' moves' + (typeof accMe === 'number' ? ' · ' + accMe.toFixed(1) + '% accuracy' : '') + ' · ' + new Date(g.t || 0).toLocaleDateString()));
     const act = el('div', 'flex gap-2');
-    const a = el('button', 'btn btn-b sm', g.analysis ? 'View analysis' : 'Analyze'); a.onclick = () => openAnalysisFor(g);
+    // Only the owner can run/save analysis on their own games
+    if (!isOther) {
+      const a = el('button', 'btn btn-b sm', g.analysis ? 'View analysis' : 'Analyze'); a.onclick = () => openAnalysisFor(g);
+      act.append(a);
+    } else if (g.analysis) {
+      const a = el('button', 'btn btn-b sm', 'View analysis'); a.onclick = () => openAnalysisFor(g);
+      act.append(a);
+    }
     const x = el('button', 'btn sm', 'Export log'); x.onclick = () => { let an = null; try { an = g.analysis ? JSON.parse(g.analysis) : null; } catch (e) {} downloadText('tesseract_' + g.id + '.txt', buildLogText(g, an)); };
-    act.append(a, x); row.append(left, act); list.append(row);
+    act.append(x); row.append(left, act); list.append(row);
   });
 }
 function renderOpenGames() {
@@ -1592,7 +1956,13 @@ function leaveRoom() {
   if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
   currentRoomCode = null; myRole = null; oppJoined = false; oppGone = false; prevMc = null;
   roomStatus = 'active'; roomPausedAt = 0; roomExpires = 0; roomNames = {}; roomUids = {}; roomOffer = null; presence = {}; lastOpenKey = '';
-  $('roomCodeInput').value = ''; $('chatLog').innerHTML = ''; $('offerModal').classList.add('hidden');
+  $('roomCodeInput').value = '';
+  $('chatLog').innerHTML = '';
+  if ($('chatLogSide')) $('chatLogSide').innerHTML = '';
+  $('offerModal').classList.add('hidden');
+  document.body.classList.remove('online-room', 'show-players', 'show-chat');
+  timeControlMs = 0; timeLeftX = 0; timeLeftO = 0; clockSide = null; clockAt = 0; timeoutHandled = false;
+  syncOnlineToggles();
   updateRoleBadge(); clearSeat();
   init(); render();
 }
@@ -1600,21 +1970,57 @@ $('btnLeaveRoom').onclick = () => leaveRoom();
 
 function addChat(m) {
   if (!m || typeof m.t !== 'string') return;
-  const d = el('div');
   const pName = m.n || roomNames[m.r] || (m.r === 'X' ? 'Player X' : 'Player O');
-  const who = el('b', m.r === 'X' ? 'x' : m.r === 'O' ? 'o' : '', pName + '(' + (m.r === 'SPECTATOR' ? 'Spec' : m.r) + '): ');
-  d.append(who, document.createTextNode(m.t));
-  const log = $('chatLog'); log.appendChild(d); log.scrollTop = log.scrollHeight;
+  const makeRow = () => {
+    const d = el('div');
+    const who = el('b', m.r === 'X' ? 'x' : m.r === 'O' ? 'o' : '', pName + '(' + (m.r === 'SPECTATOR' ? 'Spec' : m.r) + '): ');
+    d.append(who, document.createTextNode(m.t));
+    return d;
+  };
+  const log = $('chatLog');
+  if (log) { log.appendChild(makeRow()); log.scrollTop = log.scrollHeight; }
+  const side = $('chatLogSide');
+  if (side) { side.appendChild(makeRow()); side.scrollTop = side.scrollHeight; }
 }
-function sendChat() {
-  const inp = $('chatInput'), t = inp.value.trim().slice(0, 200);
+function sendChat(fromSide) {
+  const inp = $(fromSide ? 'chatInputSide' : 'chatInput');
+  if (!inp) return;
+  const t = inp.value.trim().slice(0, 200);
   if (!t || !currentRoomCode) return;
   const myName = me ? me.name : guestName;
   push(ref(db, 'rooms/' + currentRoomCode + '/chat'), { r: myRole, n: myName, t, ts: Date.now() });
   inp.value = '';
+  // keep the other input in sync (cleared)
+  const other = $(fromSide ? 'chatInput' : 'chatInputSide');
+  if (other) other.value = '';
 }
-$('chatSend').onclick = sendChat;
-$('chatInput').onkeydown = e => { if (e.key === 'Enter') sendChat(); };
+$('chatSend').onclick = () => sendChat(false);
+$('chatInput').onkeydown = e => { if (e.key === 'Enter') sendChat(false); };
+$('chatSendSide').onclick = () => sendChat(true);
+$('chatInputSide').onkeydown = e => { if (e.key === 'Enter') sendChat(true); };
+
+function syncOnlineToggles() {
+  const showP = document.body.classList.contains('show-players');
+  const showC = document.body.classList.contains('show-chat');
+  const bp = $('btnPlayersToggle'), bc = $('btnChatToggle');
+  if (bp) {
+    bp.textContent = showP ? 'Close player list' : 'Open player list';
+    bp.classList.toggle('on', showP);
+  }
+  if (bc) {
+    bc.textContent = showC ? 'Close chat' : 'Open chat';
+    bc.classList.toggle('on', showC);
+  }
+}
+$('btnPlayersToggle').onclick = () => {
+  document.body.classList.toggle('show-players');
+  syncOnlineToggles();
+};
+$('btnChatToggle').onclick = () => {
+  document.body.classList.toggle('show-chat');
+  syncOnlineToggles();
+};
+syncOnlineToggles();
 
 async function createRoomInner(silent) {
   let code;
@@ -1624,12 +2030,18 @@ async function createRoomInner(silent) {
   roomNames = { X: myName }; roomUids = { X: myUid }; presence = {};
   updateRoleBadge(); $('roomCodeInput').value = code;
   init();
+  const tcMin = Math.max(30, Math.min(180, +$('tc').value || 60));
+  timeControlMs = tcMin * 60 * 1000;
+  timeLeftX = timeControlMs; timeLeftO = timeControlMs;
+  clockSide = null; clockAt = 0; timeoutHandled = false;
   await set(ref(db, 'rooms/' + code), {
-    gameState: JSON.stringify(S), settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value },
-    playerX: true, playerO: false, playerXuid: myUid, names: { X: myName }, uids: { X: myUid }, status: 'active', createdAt: Date.now()
+    gameState: JSON.stringify(S),
+    settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value, tc: String(tcMin) },
+    playerX: true, playerO: false, playerXuid: myUid, names: { X: myName }, uids: { X: myUid }, status: 'active', createdAt: Date.now(),
+    timeControlMs, timeLeftX, timeLeftO, clockSide: null, clockAt: null
   });
   saveSeat(); listenToRoom(code);
-  if (!silent) showModal('Room created', 'Room code: ' + code + '. Share it with a friend.');
+  if (!silent) showModal('Room created', 'Room code: ' + code + '. Time control: ' + tcMin + ' min each. Share it with a friend.');
 }
 async function joinRoomInner() {
   const code = $('roomCodeInput').value.trim().toUpperCase();
@@ -1653,9 +2065,10 @@ async function joinRoom() { try { await joinRoomInner(); } catch (e) { leaveRoom
 
 function syncToFirebase(extra) {
   if (!currentRoomCode) return;
+  const tcMin = $('tc') ? (+$('tc').value || 60) : 60;
   return update(ref(db, 'rooms/' + currentRoomCode), {
     gameState: JSON.stringify({ ...S, hist: [] }),
-    settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value }, ...(extra || {})
+    settings: { m: $('m').value, ins: $('ins').checked, sc: $('sc').value, tc: String(tcMin) }, ...(extra || {})
   }).catch(e => showModal('Move not saved', errText(e)));
 }
 function validState(p) {
@@ -1699,25 +2112,53 @@ function listenToRoom(code) {
       ['t0', 'pausedMs', 'endedAt'].forEach(k => p[k] = +p[k] || 0);
       if (!p.cfg || typeof p.cfg !== 'object') p.cfg = null;
       p.log = p.log.map(x => String(x).slice(0, 8)); p.ai = null;
+      if (p.scores && typeof p.scores === 'object') S && (p.scores = p.scores);
       if (prevMc != null && p.mc > prevMc && (myRole === 'X' || myRole === 'O') && (p.turn === 'X' ? 'O' : 'X') !== myRole) playPop();
       prevMc = p.mc;
       S = p; S.hist = [];
       if (S.tg != null) focusG = S.tg;
+      if (S.win) timeoutHandled = true;
     } catch (e) { return; }
     render();
   }));
   subs.push(onValue(ref(db, base + '/settings'), sn => {
     const s = sn.val(); if (!s) return;
-    lastSettings = { m: s.m, ins: s.ins, sc: s.sc };
-    $('m').value = s.m; $('ins').checked = !!s.ins; $('sc').value = s.sc; lockControls();
+    lastSettings = { m: s.m, ins: s.ins, sc: s.sc, tc: s.tc || '60' };
+    $('m').value = s.m; $('ins').checked = !!s.ins; $('sc').value = s.sc;
+    if ($('tc') && s.tc) $('tc').value = String(s.tc);
+    if (s.tc && !timeControlMs) {
+      timeControlMs = (+s.tc || 60) * 60 * 1000;
+      if (!timeLeftX) timeLeftX = timeControlMs;
+      if (!timeLeftO) timeLeftO = timeControlMs;
+    }
+    lockControls();
   }));
-  subs.push(onValue(ref(db, base + '/playerO'), sn => { oppJoined = !!sn.val(); render(); }));
+  subs.push(onValue(ref(db, base + '/playerO'), sn => {
+    oppJoined = !!sn.val();
+    // Host starts both clocks when the opponent joins
+    if (oppJoined && myRole === 'X' && timeControlMs && !clockSide && !S.win && roomStatus === 'active') {
+      const now = Date.now();
+      clockSide = S.turn || 'X'; clockAt = now;
+      update(ref(db, 'rooms/' + code), {
+        clockSide: clockSide, clockAt: now,
+        timeLeftX: timeLeftX || timeControlMs,
+        timeLeftO: timeLeftO || timeControlMs,
+        timeControlMs
+      }).catch(() => {});
+    }
+    render();
+  }));
   subs.push(onValue(ref(db, base + '/names'), sn => { roomNames = sn.val() || {}; render(); }));
   subs.push(onValue(ref(db, base + '/uids'), sn => { roomUids = sn.val() || {}; }));
   subs.push(onValue(ref(db, base + '/status'), sn => { roomStatus = sn.val() || 'active'; checkExpiry(); render(); }));
   subs.push(onValue(ref(db, base + '/pausedAt'), sn => { roomPausedAt = +sn.val() || 0; lockControls(); }));
   subs.push(onValue(ref(db, base + '/expiresAt'), sn => { roomExpires = +sn.val() || 0; checkExpiry(); lockControls(); }));
   subs.push(onValue(ref(db, base + '/offer'), sn => { roomOffer = sn.val(); handleOffer(); }));
+  subs.push(onValue(ref(db, base + '/timeControlMs'), sn => { timeControlMs = +sn.val() || 0; updateClockUI(); }));
+  subs.push(onValue(ref(db, base + '/timeLeftX'), sn => { if (sn.val() != null) timeLeftX = +sn.val(); updateClockUI(); }));
+  subs.push(onValue(ref(db, base + '/timeLeftO'), sn => { if (sn.val() != null) timeLeftO = +sn.val(); updateClockUI(); }));
+  subs.push(onValue(ref(db, base + '/clockSide'), sn => { clockSide = sn.val() || null; updateClockUI(); }));
+  subs.push(onValue(ref(db, base + '/clockAt'), sn => { clockAt = +sn.val() || 0; updateClockUI(); }));
   subs.push(onValue(ref(db, base + '/presence'), sn => {
     presence = sn.val() || {}; const o = myRole === 'X' ? 'O' : 'X';
     oppGone = (myRole === 'X' || myRole === 'O') && presence[o] === false; lockControls();
@@ -1727,6 +2168,7 @@ function listenToRoom(code) {
     subs.push(onValue(ref(db, '.info/connected'), s => { if (s.val() === true) { onDisconnect(pr).set(false); set(pr, true); } }));
   }
   $('chatLog').innerHTML = '';
+  if ($('chatLogSide')) $('chatLogSide').innerHTML = '';
   subs.push(onChildAdded(query(ref(db, base + '/chat'), limitToLast(60)), cs => addChat(cs.val())));
   unsubscribeRoom = () => subs.forEach(f => f());
 }
@@ -1753,8 +2195,15 @@ async function answerOffer(accept) {
   const rr = ref(db, 'rooms/' + currentRoomCode);
   try {
     if (!accept) { await update(rr, { offer: { ...o, state: 'declined' } }); return; }
-    if (o.type === 'draw') { endGame('D', 'agreed'); await syncToFirebase({ offer: null }); }
-    else { const now = Date.now(); await update(rr, { offer: null, status: 'paused', pausedAt: now, expiresAt: now + 48 * 3600 * 1000 }); }
+    if (o.type === 'draw') { endGame('D', 'agreed'); await syncToFirebase({ offer: null, clockSide: null, clockAt: null }); }
+    else {
+      const now = Date.now();
+      const frozen = freezeClocksForPause();
+      await update(rr, {
+        offer: null, status: 'paused', pausedAt: now, expiresAt: now + 48 * 3600 * 1000,
+        ...frozen
+      });
+    }
   } catch (e) { showModal('Could not answer', errText(e)); }
 }
 $('offerYes').onclick = () => answerOffer(true);
@@ -1776,7 +2225,13 @@ $('pauseBtn').onclick = async () => {
 $('resumeBtn').onclick = async () => {
   if (roomStatus !== 'paused' || !currentRoomCode) return;
   S.pausedMs = (S.pausedMs || 0) + (Date.now() - (roomPausedAt || Date.now()));
-  await syncToFirebase({ status: 'active', pausedAt: null, expiresAt: null });
+  const now = Date.now();
+  const side = clockSide || S.turn || 'X';
+  clockSide = side; clockAt = now;
+  await syncToFirebase({
+    status: 'active', pausedAt: null, expiresAt: null,
+    timeLeftX, timeLeftO, clockSide: side, clockAt: now, timeControlMs
+  });
 };
 
 function needsLeaveConfirm() {
@@ -1785,8 +2240,9 @@ function needsLeaveConfirm() {
 async function resign() { 
   endGame(myRole === 'X' ? 'O' : 'X', 'resigned'); 
   S.resigned = myRole; 
+  clockSide = null; clockAt = 0;
   clearSeat(); 
-  try { await syncToFirebase(); } catch (e) {} 
+  try { await syncToFirebase({ clockSide: null, clockAt: null }); } catch (e) {} 
 }
 async function requestMode(mode) {
   if (mode === currentTab) return;
@@ -1809,8 +2265,9 @@ $('resignBtn').onclick = async () => {
 $('claimBtn').onclick = async () => {
   if (S.win || !oppGone) return;
   endGame(myRole, 'left'); S.resigned = myRole === 'X' ? 'O' : 'X';
+  clockSide = null; clockAt = 0;
   clearSeat();
-  await syncToFirebase();
+  await syncToFirebase({ clockSide: null, clockAt: null });
 };
 $('btnCreateRoom').onclick = async () => { if (needsLeaveConfirm()) { if (!(await askLeave())) return; await resign(); } createRoom(); };
 $('btnJoinRoom').onclick = async () => {
@@ -1843,7 +2300,17 @@ function showView(v) {
 }
 $('navPlay').onclick = () => showView('play');
 $('navFriends').onclick = () => showView('friends');
-$('navProfile').onclick = () => showView('profile');
+$('navProfile').onclick = () => {
+  // Always return to own profile when using the nav tab
+  viewingUid = null; viewingName = '';
+  updateAccountUI();
+  showView('profile');
+};
+$('profBackBtn').onclick = () => {
+  viewingUid = null; viewingName = '';
+  updateAccountUI();
+  showView('profile');
+};
 $('toggleRulesBtn').onclick = () => { $('rulesAccordion').open = !$('rulesAccordion').open; if ($('rulesAccordion').open) $('rulesAccordion').scrollIntoView({ behavior: 'smooth' }); };
 
 const THEME_ORDER = ['dark', 'light', 'wireframe', 'high-contrast'];
@@ -1892,12 +2359,21 @@ $('undo').onclick = () => {
   render(); checkAndTriggerAI();
 };
 
+function syncExpandBtn() {
+  // Default = large board. compact = smaller board.
+  // Label: Shrink when large, Expand when compact.
+  const compact = document.body.classList.contains('compact');
+  $('expandBtn').textContent = compact ? 'Expand' : 'Shrink';
+}
 $('expandBtn').onclick = () => {
-  const on = document.body.classList.toggle('expanded');
-  $('expandBtn').textContent = on ? 'Shrink' : 'Expand';
-  if (on) $('bd').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const nowCompact = document.body.classList.toggle('compact');
+  $('expandBtn').textContent = nowCompact ? 'Expand' : 'Shrink';
+  if (!nowCompact) $('bd').scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('expanded')) $('expandBtn').click(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.body.classList.contains('compact')) $('expandBtn').click();
+});
+syncExpandBtn();
 
 let th = null;
 try { th = localStorage.getItem('tesseractTheme'); } catch (e) {}
